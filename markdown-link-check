@@ -135,6 +135,7 @@ stream
 });
 
 function runMarkdownLinkCheck(markdown, opts) {
+
     markdownLinkCheck(markdown, opts, function (err, results) {
         if (err) {
             console.error(chalk.red('\nERROR: something went wrong!'));
@@ -172,4 +173,5 @@ function runMarkdownLinkCheck(markdown, opts) {
             process.exit(1);
         }
     });
+    
 }
