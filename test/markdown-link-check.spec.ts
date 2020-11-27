@@ -153,10 +153,10 @@ describe('markdown-link-check', function() {
                 { statusCode: 400, status:  'dead' },
 
                 // invalid protocol
-                { statusCode: 500, status:  'error' },
+                { statusCode: 0, status:  'error' },
 
                 // invalid protocol
-                { statusCode: 500, status:  'error' },
+                { statusCode: 0, status:  'error' },
             ];
             expect(results!.length).to.be(expected.length);
 
