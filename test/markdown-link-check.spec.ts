@@ -1,37 +1,36 @@
-'use strict';
+import * as fs from 'fs'
+import * as path from 'path'
+import * as http from 'http'
+import express from 'express'
+import expect from 'expect.js'
 
-const fs = require('fs');
-const path = require('path');
-const expect = require('expect.js');
-const http = require('http');
-const express = require('express');
-const markdownLinkCheck = require('../');
+import { markdownLinkCheck } from '../src'
 
-describe('markdown-link-check', function () {
+describe('markdown-link-check', function() {
     const MAX_RETRY_COUNT = 5;
     // add a longer timeout on tests so we can really test real cases.
     // Mocha default is 2s, make it 5s here.
     this.timeout(5000);
 
-    let baseUrl;
+    let baseUrl: string;
 
-    before(function (done) {
+    before((done) => {
         const app = express();
 
-        var laterRetryCount = 0;
+        let laterRetryCount = 0;
 
-        app.head('/nohead', function (req, res) {
+        app.head('/nohead', (req, res) => {
             res.sendStatus(405); // method not allowed
         });
-        app.get('/nohead', function (req, res) {
+        app.get('/nohead', (req, res) => {
             res.sendStatus(200);
         });
 
-        app.get('/partial', function (req, res) {
+        app.get('/partial', (req, res) => {
             res.sendStatus(206);
         });
 
-        app.get('/later', function (req, res) {
+        app.get('/later', (req, res) => {
             if(laterRetryCount<MAX_RETRY_COUNT){
               laterRetryCount++;
               if(laterRetryCount !== 2) {
@@ -44,14 +43,15 @@ describe('markdown-link-check', function () {
             }
         });
 
-        app.get('/foo/redirect', function (req, res) {
+        app.get('/foo/redirect', (req, res) => {
             res.redirect('/foo/bar');
         });
-        app.get('/foo/bar', function (req, res) {
+        app.get('/foo/bar', (req, res) => {
             res.json({foo:'bar'});
         });
 
-        app.get('/basic-auth', function (req, res) {
+        app.get('/basic-auth', (req, res) => {
+            // tslint:disable-next-line:no-string-literal
             if (req.headers["authorization"] === "Basic Zm9vOmJhcg==") {
                 res.sendStatus(200);
             }
@@ -60,37 +60,36 @@ describe('markdown-link-check', function () {
             }
         });
 
-        app.get('/loop', function (req, res) {
+        app.get('/loop', (req, res) => {
             res.redirect('/loop');
         });
 
-        app.get('/hello.jpg', function (req, res) {
+        app.get('/hello.jpg', (req, res) => {
             res.sendFile('hello.jpg', {
                 root: __dirname,
                 dotfiles: 'deny'
             });
         });
 
-        app.get('/foo\\(a=b.42\\).aspx', function (req, res) {
+        app.get('/foo\\(a=b.42\\).aspx', (req, res) => {
             res.json({a:'b'});
         });
 
         const server = http.createServer(app);
-        server.listen(0 /* random open port */, 'localhost', function serverListen(err) {
-            if (err) {
-                done(err);
-                return;
-            }
-            baseUrl = 'http://' + server.address().address + ':' + server.address().port;
+        server.listen(0 /* random open port */, 'localhost', function serverListen() {
+            const address = typeof server.address() === 'string' ?
+                server.address() :
+                (server.address() as any).address + ':' + (server.address() as any).port
+            baseUrl = 'http://' + address
             done();
         });
     });
 
-    it('should check the links in sample.md', function (done) {
+    it('should check the links in sample.md', (done) => {
         markdownLinkCheck(
             fs.readFileSync(path.join(__dirname, 'sample.md')).toString().replace(/%%BASE_URL%%/g, baseUrl),
             {
-                baseUrl: baseUrl,
+                baseUrl,
                 ignorePatterns: [{ pattern: /not-working-and-ignored/ }],
                 replacementPatterns: [{ pattern: /boo/, replacement: "foo" }],
                 httpHeaders: [
@@ -103,7 +102,7 @@ describe('markdown-link-check', function () {
                 "retryOn429":true,
                 "retryCount": MAX_RETRY_COUNT,
                 "fallbackRetryDelay": "500ms"
-            }, function (err, results) {
+            }, (err, results) => {
             expect(err).to.be(null);
             expect(results).to.be.an('array');
 
@@ -159,19 +158,19 @@ describe('markdown-link-check', function () {
                 // invalid protocol
                 { statusCode: 500, status:  'error' },
             ];
-            expect(results.length).to.be(expected.length);
+            expect(results!.length).to.be(expected.length);
 
-            for (let i = 0; i < results.length; i++) {
-                expect(results[i].statusCode).to.be(expected[i].statusCode);
-                expect(results[i].status).to.be(expected[i].status);
+            for (let i = 0; i < results!.length; i++) {
+                expect(results![i]!.statusCode).to.be(expected[i].statusCode);
+                expect(results![i]!.status).to.be(expected[i].status);
             }
 
             done();
         });
     });
 
-    it('should check the links in file.md', function (done) {
-        markdownLinkCheck(fs.readFileSync(path.join(__dirname, 'file.md')).toString().replace(/%%BASE_URL%%/g, 'file://' + __dirname), { baseUrl: baseUrl }, function (err, results) {
+    it('should check the links in file.md', (done) => {
+        markdownLinkCheck(fs.readFileSync(path.join(__dirname, 'file.md')).toString().replace(/%%BASE_URL%%/g, 'file://' + __dirname), { baseUrl }, (err, results) => {
             expect(err).to.be(null);
             expect(results).to.be.an('array');
 
@@ -181,18 +180,18 @@ describe('markdown-link-check', function () {
                 { statusCode: 404, status:  'dead' },
             ];
 
-            expect(results.length).to.be(expected.length);
+            expect(results!.length).to.be(expected.length);
 
-            for (let i = 0; i < results.length; i++) {
-                expect(results[i].statusCode).to.be(expected[i].statusCode);
-                expect(results[i].status).to.be(expected[i].status);
+            for (let i = 0; i < results!.length; i++) {
+                expect(results![i]!.statusCode).to.be(expected[i].statusCode);
+                expect(results![i]!.status).to.be(expected[i].status);
             }
 
             done();
         });
     });
 
-    it('should handle thousands of links (this test takes up to a minute)', function (done) {
+    it('should handle thousands of links (this test takes up to a minute)', function(done) {
         this.timeout(60000);
 
         let md = '';
@@ -200,27 +199,27 @@ describe('markdown-link-check', function () {
         for (let i = 0; i < nlinks; i++) {
             md += '[test](' + baseUrl + '/foo/bar?i=' + i + ')\n';
         }
-        markdownLinkCheck(md, function (err, results) {
+        markdownLinkCheck(md, (err, results) => {
             expect(err).to.be(null);
             expect(results).to.be.an('array');
             expect(results).to.have.length(nlinks);
 
-            for (let i = 0; i < results.length; i++) {
-                expect(results[i].statusCode).to.be(200);
-                expect(results[i].status).to.be('alive');
+            for (const result of results!) {
+                expect(result!.statusCode).to.be(200);
+                expect(result!.status).to.be('alive');
             }
 
             done();
         });
     });
 
-    it('should handle links with parens', function (done) {
-        markdownLinkCheck('[test](' + baseUrl + '/foo\(a=b.42\).aspx)', function (err, results) {
+    it('should handle links with parens', (done) => {
+        markdownLinkCheck('[test](' + baseUrl + '/foo\(a=b.42\).aspx)', (err, results) => {
             expect(err).to.be(null);
             expect(results).to.be.an('array');
             expect(results).to.have.length(1);
-            expect(results[0].statusCode).to.be(200);
-            expect(results[0].status).to.be('alive');
+            expect(results![0]!.statusCode).to.be(200);
+            expect(results![0]!.status).to.be('alive');
             done();
         });
     });
