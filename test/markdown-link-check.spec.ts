@@ -85,144 +85,122 @@ describe('markdown-link-check', function () {
         });
     });
 
-    // it('should check the links in sample.md', (done) => {
-    //     markdownLinkCheck(
-    //         fs.readFileSync(path.join(__dirname, 'sample.md')).toString().replace(/%%BASE_URL%%/g, baseUrl),
-    //         {
-    //             baseUrl,
-    //             ignorePatterns: [{ pattern: /not-working-and-ignored/ }],
-    //             replacementPatterns: [{ pattern: /boo/, replacement: "foo" }],
-    //             httpHeaders: [
-    //                 {
-    //                     urls: [baseUrl + '/basic-auth'],
-    //                     headers: { 'Authorization': 'Basic Zm9vOmJhcg==', 'Foo': 'Bar' }
-    //                 }
-    //             ],
-    //             "aliveStatusCodes":[200, 206],
-    //             "retryOn429":true,
-    //             "retryCount": MAX_RETRY_COUNT,
-    //             "fallbackRetryDelay": "500ms"
-    //         }, (err, results) => {
-    //         expect(err).to.be(null);
-    //         expect(results).to.be.an('array');
+    it('should check the links in sample.md', (done) => {
+        markdownLinkCheck(
+            fs.readFileSync(path.join(__dirname, 'sample.md')).toString().replace(/%%BASE_URL%%/g, baseUrl),
+            {
+                baseUrl,
+                ignorePatterns: [{ pattern: /not-working-and-ignored/ }],
+                replacementPatterns: [{ pattern: /boo/, replacement: "foo" }],
+                httpHeaders: [
+                    {
+                        urls: [baseUrl + '/basic-auth'],
+                        headers: { 'Authorization': 'Basic Zm9vOmJhcg==', 'Foo': 'Bar' }
+                    }
+                ],
+                "aliveStatusCodes":[200, 206],
+                "retryOn429":true,
+                "retryCount": MAX_RETRY_COUNT,
+                "fallbackRetryDelay": "500ms"
+            }, (err, results) => {
+            expect(err).to.be(null);
+            expect(results).to.be.an('array');
 
-    //         const expected = [
-    //             // redirect-loop
-    //             { statusCode:   0, status:  'dead' },
+            const expected = [
+                // redirect-loop
+                { statusCode:   0, status:  'dead' },
 
-    //             // valid
-    //             { statusCode: 200, status: 'alive' },
+                // valid
+                { statusCode: 200, status: 'alive' },
 
-    //             // invalid
-    //             { statusCode: 404, status:  'dead' },
+                // invalid
+                { statusCode: 404, status:  'dead' },
 
-    //             // dns-resolution-fail
-    //             { statusCode:   0, status:  'dead' },
+                // dns-resolution-fail
+                { statusCode:   0, status:  'dead' },
 
-    //             // nohead-get-ok
-    //             { statusCode: 200, status: 'alive' },
+                // nohead-get-ok
+                { statusCode: 200, status: 'alive' },
 
-    //             // redirect
-    //             { statusCode: 200, status: 'alive' },
+                // redirect
+                { statusCode: 200, status: 'alive' },
 
-    //             // basic-auth
-    //             { statusCode: 200, status: 'alive' },
+                // basic-auth
+                { statusCode: 200, status: 'alive' },
 
-    //             // ignored
-    //             { statusCode: 0, status: 'ignored' },
+                // ignored
+                { statusCode: 0, status: 'ignored' },
 
-    //             // replaced
-    //             { statusCode: 200, status: 'alive' },
+                // replaced
+                { statusCode: 200, status: 'alive' },
 
-    //             // request rate limit return 429, retry later and get 200
-    //             { statusCode: 200, status: 'alive' },
+                // request rate limit return 429, retry later and get 200
+                { statusCode: 200, status: 'alive' },
 
-    //             // partial
-    //             { statusCode: 206, status: 'alive' },
+                // partial
+                { statusCode: 206, status: 'alive' },
 
-    //             // hello image
-    //             { statusCode: 200, status: 'alive' },
+                // hello image
+                { statusCode: 200, status: 'alive' },
 
-    //             // hello image
-    //             { statusCode: 200, status: 'alive' },
+                // hello image
+                { statusCode: 200, status: 'alive' },
 
-    //             // valid e-mail
-    //             { statusCode: 200, status:  'alive' },
+                // valid e-mail
+                { statusCode: 200, status:  'alive' },
 
-    //             // invalid e-mail
-    //             { statusCode: 400, status:  'dead' },
+                // invalid e-mail
+                { statusCode: 400, status:  'dead' },
 
-    //             // invalid protocol
-    //             { statusCode: 0, status:  'error' },
+                // invalid protocol
+                { statusCode: 0, status:  'error' },
 
-    //             // invalid protocol
-    //             { statusCode: 0, status:  'error' },
-    //         ];
-    //         expect(results!.length).to.be(expected.length);
+                // invalid protocol
+                { statusCode: 0, status:  'error' },
+            ];
+            expect(results!.length).to.be(expected.length);
 
-    //         for (let i = 0; i < results!.length; i++) {
-    //             expect(results![i]!.statusCode).to.be(expected[i].statusCode);
-    //             expect(results![i]!.status).to.be(expected[i].status);
-    //         }
+            for (let i = 0; i < results!.length; i++) {
+                expect(results![i]!.statusCode).to.be(expected[i].statusCode);
+                expect(results![i]!.status).to.be(expected[i].status);
+            }
 
-    //         done();
-    //     });
-    // });
+            done();
+        });
+    });
 
-    // it('should check the links in file.md', (done) => {
-    //     markdownLinkCheck(fs.readFileSync(path.join(__dirname, 'file.md')).toString().replace(/%%BASE_URL%%/g, 'file://' + __dirname), { baseUrl }, (err, results) => {
-    //         expect(err).to.be(null);
-    //         expect(results).to.be.an('array');
+    it('should check the links in file.md', (done) => {
+        markdownLinkCheck(fs.readFileSync(path.join(__dirname, 'file.md')).toString().replace(/%%BASE_URL%%/g, 'file://' + __dirname), { baseUrl }, (err, results) => {
+            expect(err).to.be(null);
+            expect(results).to.be.an('array');
 
-    //         const expected = [
-    //             { statusCode: 200, status: 'alive' },
-    //             { statusCode: 200, status: 'alive' },
-    //             { statusCode: 404, status:  'dead' },
-    //         ];
+            const expected = [
+                { statusCode: 200, status: 'alive' },
+                { statusCode: 200, status: 'alive' },
+                { statusCode: 404, status:  'dead' },
+            ];
 
-    //         expect(results!.length).to.be(expected.length);
+            expect(results!.length).to.be(expected.length);
 
-    //         for (let i = 0; i < results!.length; i++) {
-    //             expect(results![i]!.statusCode).to.be(expected[i].statusCode);
-    //             expect(results![i]!.status).to.be(expected[i].status);
-    //         }
+            for (let i = 0; i < results!.length; i++) {
+                expect(results![i]!.statusCode).to.be(expected[i].statusCode);
+                expect(results![i]!.status).to.be(expected[i].status);
+            }
 
-    //         done();
-    //     });
-    // });
+            done();
+        });
+    });
 
-    // it('should handle thousands of links (this test takes up to a minute)', function(done) {
-    //     this.timeout(60000);
-
-    //     let md = '';
-    //     const nlinks = 10000;
-    //     for (let i = 0; i < nlinks; i++) {
-    //         md += '[test](' + baseUrl + '/foo/bar?i=' + i + ')\n';
-    //     }
-    //     markdownLinkCheck(md, (err, results) => {
-    //         expect(err).to.be(null);
-    //         expect(results).to.be.an('array');
-    //         expect(results).to.have.length(nlinks);
-
-    //         for (const result of results!) {
-    //             expect(result!.statusCode).to.be(200);
-    //             expect(result!.status).to.be('alive');
-    //         }
-
-    //         done();
-    //     });
-    // });
-
-    // it('should handle links with parens', (done) => {
-    //     markdownLinkCheck('[test](' + baseUrl + '/foo\(a=b.42\).aspx)', (err, results) => {
-    //         expect(err).to.be(null);
-    //         expect(results).to.be.an('array');
-    //         expect(results).to.have.length(1);
-    //         expect(results![0]!.statusCode).to.be(200);
-    //         expect(results![0]!.status).to.be('alive');
-    //         done();
-    //     });
-    // });
+    it('should handle links with parens', (done) => {
+        markdownLinkCheck('[test](' + baseUrl + '/foo\(a=b.42\).aspx)', (err, results) => {
+            expect(err).to.be(null);
+            expect(results).to.be.an('array');
+            expect(results).to.have.length(1);
+            expect(results![0]!.statusCode).to.be(200);
+            expect(results![0]!.status).to.be('alive');
+            done();
+        });
+    });
 
     it('should handle links with parens', (done) => {
         const inputsArgs: InputsArgs = {
@@ -282,6 +260,29 @@ describe('markdown-link-check', function () {
                 expect(file2Results[i]!.statusCode).to.be(file2Expected[i].statusCode);
                 expect(file2Results[i]!.status).to.be(file2Expected[i].status);
             }
+            done();
+        });
+    });
+
+
+    it('should handle thousands of links (this test takes up to a minute)', function(done) {
+        this.timeout(60000);
+
+        let md = '';
+        const nlinks = 10000;
+        for (let i = 0; i < nlinks; i++) {
+            md += '[test](' + baseUrl + '/foo/bar?i=' + i + ')\n';
+        }
+        markdownLinkCheck(md, (err, results) => {
+            expect(err).to.be(null);
+            expect(results).to.be.an('array');
+            expect(results).to.have.length(nlinks);
+
+            for (const result of results!) {
+                expect(result!.statusCode).to.be(200);
+                expect(result!.status).to.be('alive');
+            }
+
             done();
         });
     });
