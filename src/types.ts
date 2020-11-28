@@ -15,6 +15,8 @@ export interface Options extends LinkCheckOptions {
     ignorePatterns?: IgnorePattern[]
     replacementPatterns?: ReplacementPattern[]
     httpHeaders?: HttpHeader[]
+    concurrentCheck?: number
+    fileEncoding?: string
 }
 export interface IgnorePattern {
     pattern: string | RegExp
