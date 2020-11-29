@@ -11,7 +11,7 @@ import { Options, Status, Callback } from './types'
 
 export * from './types'
 
-interface ProcessInputResults {
+export interface ProcessInputResults {
     filenameOrUrl: string
     options: Options
     results?: (LinkCheckResult | undefined)[]
