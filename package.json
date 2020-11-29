@@ -3,7 +3,7 @@
   "version": "3.8.3",
   "description": "checks the all of the hyperlinks in a markdown text to determine if they are alive or dead",
   "bin": {
-    "markdown-link-check": "markdown-link-check"
+    "markdown-link-check": "./dist/markdown-link-check.js"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,7 +11,7 @@
     "format": "prettier --write \"{src,test}/**/*.ts\"",
     "lint": "tslint -p tsconfig.json",
     "lint-fix": "tslint -p tsconfig.json --fix",
-    "pretest": "npm run lint && jshint markdown-link-check",
+    "pretest": "npm run lint",
     "test": "mocha --exit",
     "build": "npm run lint && rm -rf ./dist && tsc -p tsconfig-build.json",
     "postinstall": "tsc -p tsconfig-build.json"
@@ -35,9 +35,6 @@
     "url": "https://github.com/tcort/markdown-link-check/issues"
   },
   "homepage": "https://github.com/tcort/markdown-link-check#readme",
-  "files": [
-    "markdown-link-check"
-  ],
   "dependencies": {
     "@types/async": "^3.2.4",
     "@types/lodash": "^4.14.165",
