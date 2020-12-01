@@ -67,26 +67,24 @@ interface InputArg {
  */
 function processInput(inputArg: InputArg, callback: Callback<ProcessInputResults>) {
     extractMarkdownFromInput(inputArg, (err1: any, result1?: ExtractMarkdownResult) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        // eslint-disable-line @typescript-eslint/no-explicit-any
         if (err1) {
             callback(err1)
         } else {
             const r1 = result1! // eslint-disable-line @typescript-eslint/no-non-null-assertion
-            procesMarkdown(
-                r1.markdown,
-                r1.options,
-                (err2: any, result2?: (LinkCheckResult | undefined)[]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
-                    if (err2) {
-                        callback(err2)
-                    } else {
-                        const r2 = result2! // eslint-disable-line @typescript-eslint/no-non-null-assertion
-                        callback(null, {
-                            filenameOrUrl: inputArg.filenameOrUrl,
-                            options: r1.options,
-                            results: r2,
-                        })
-                    }
-                },
-            )
+            procesMarkdown(r1.markdown, r1.options, (err2: any, result2?: (LinkCheckResult | undefined)[]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+                // eslint-disable-line @typescript-eslint/no-explicit-any
+                if (err2) {
+                    callback(err2)
+                } else {
+                    const r2 = result2! // eslint-disable-line @typescript-eslint/no-non-null-assertion
+                    callback(null, {
+                        filenameOrUrl: inputArg.filenameOrUrl,
+                        options: r1.options,
+                        results: r2,
+                    })
+                }
+            })
         }
     })
 }
@@ -105,6 +103,7 @@ function extractMarkdownFromInput(inputArg: InputArg, callback: Callback<Extract
     const filenameOrUrl = inputArg.filenameOrUrl
     if (/https?:/.test(filenameOrUrl)) {
         request.get(filenameOrUrl, (error: any, response: request.Response, body: any): void => { // eslint-disable-line @typescript-eslint/no-explicit-any
+            // eslint-disable-line @typescript-eslint/no-explicit-any
             if (error) {
                 callback(error)
             } else if (response.statusCode === 404) {
@@ -170,7 +169,11 @@ function extractMarkdownFromInput(inputArg: InputArg, callback: Callback<Extract
  *  list of links and their status
  * }
  */
-export function markdownLinkCheck(markdown: string, optionsArg: Options | Callback<(LinkCheckResult | undefined)[]>, callbackArg?: Callback<(LinkCheckResult | undefined)[]>): void {
+export function markdownLinkCheck(
+    markdown: string,
+    optionsArg: Options | Callback<(LinkCheckResult | undefined)[]>,
+    callbackArg?: Callback<(LinkCheckResult | undefined)[]>,
+): void {
     let options: Options
     let callback: Callback<(LinkCheckResult | undefined)[]>
 
@@ -195,7 +198,11 @@ export function markdownLinkCheck(markdown: string, optionsArg: Options | Callba
  *  list of links and their status
  * }
  */
-export function procesMarkdown(markdown: string, options: Options, callback: Callback<(LinkCheckResult | undefined)[]>): void {
+export function procesMarkdown(
+    markdown: string,
+    options: Options,
+    callback: Callback<(LinkCheckResult | undefined)[]>,
+): void {
     // Make sure it is not undefined and that the appropriate headers are always recalculated for a given link.
     options.headers = {}
 
@@ -232,6 +239,7 @@ export function procesMarkdown(markdown: string, options: Options, callback: Cal
 /** Return a linkCheckIterator function after capturing options and bar parameters */
 function getLinkCheckIterator(options: Options, bar: ProgressBar | undefined) {
     return function linkCheckIterator(link: string, callback: async.AsyncResultCallback<LinkCheckResult, any>) { // eslint-disable-line @typescript-eslint/no-explicit-any
+        // eslint-disable-line @typescript-eslint/no-explicit-any
         {
             if (options.ignorePatterns) {
                 const shouldIgnore = options.ignorePatterns.some((ignorePattern) => {

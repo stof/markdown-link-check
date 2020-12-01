@@ -81,8 +81,8 @@ describe('markdown-link-check', function () {
             const address =
                 typeof server.address() === 'string'
                     ? server.address()
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    : (server.address() as any).address + ':' + (server.address() as any).port
+                    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      (server.address() as any).address + ':' + (server.address() as any).port
             baseUrl = 'http://' + address
             done()
         })

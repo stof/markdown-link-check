@@ -32,7 +32,7 @@ function run(filenameOrUrl: string, cmdObj: CmdOptions): void {
             return { filenameOrUrl: input }
         }),
     }
-    processInputs(inputsArgs, options, (err: any, results?: (ProcessInputResults | undefined)[]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+    processInputs(inputsArgs, options, (err: any, results?: (ProcessInputResults | undefined)[]) => { //eslint-disable-line @typescript-eslint/no-explicit-any
         printInputsResult(cmdObj, err, results)
     })
 }
@@ -76,6 +76,7 @@ function overrideOptionswithCmdObj(options: Options, cmdObj: CmdOptions) {
     }
 }
 function printInputsResult(cmdObj: CmdOptions, err: any, results?: (ProcessInputResults | undefined)[]): void { // eslint-disable-line @typescript-eslint/no-explicit-any
+    // eslint-disable-line @typescript-eslint/no-explicit-any
     if (err) {
         console.error(chalk.red('ERROR: something went wrong!'))
         console.error(err)
