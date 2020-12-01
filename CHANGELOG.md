@@ -2,6 +2,8 @@
 
 ## [Unreleased][]
 
+## [4.0.1][] - 2020-12-01
+
 ### Added
 
 - Release on new tag with github action
@@ -95,6 +97,7 @@
 * update dependencies to avoid CVE-2018-3728
 
 
-[Unreleased]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.1...HEAD
+[4.0.1]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v3.8.3...v4.0.0
 [3.8.3]: https://github.com/boillodmanuel/markdown-link-check/tree/v3.8.3
