@@ -2,8 +2,8 @@
 
 This is a test file:
 
-![img](%%BASE_URL%%/hello.jpg) (alive)
-![img](hello.jpg) (alive)
+![absolute path](file://%%BASE_DIR%%/img.jpg) (alive)
+![img](img.jpg) (alive)
 ![img](goodbye.jpg) (dead)
 
 <!-- markdown-link-check-disable -->

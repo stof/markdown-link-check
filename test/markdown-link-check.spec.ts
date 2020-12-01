@@ -67,7 +67,7 @@ describe('markdown-link-check', function () {
 
         app.get('/hello.jpg', (req, res) => {
             res.sendFile('hello.jpg', {
-                root: __dirname,
+                root: path.join(__dirname, "http/www"),
                 dotfiles: 'deny',
             })
         })
@@ -88,10 +88,10 @@ describe('markdown-link-check', function () {
         })
     })
 
-    it('should check the links in sample.md', (done) => {
+    it('should check the links in sample.md and resolve relative path to HTTP', (done) => {
         markdownLinkCheck(
             fs
-                .readFileSync(path.join(__dirname, 'sample.md'))
+                .readFileSync(path.join(__dirname, 'http/sample.md'))
                 .toString()
                 .replace(/%%BASE_URL%%/g, baseUrl),
             {
@@ -177,13 +177,15 @@ describe('markdown-link-check', function () {
         )
     })
 
-    it('should check the links in file.md', (done) => {
+    it('should check the links in file.md and resolve relative path to FILE', (done) => {
+        const baseDir = path.join(__dirname, 'file/single/')
+        const input = fs
+            .readFileSync(path.join(baseDir, 'file.md'))
+            .toString()
+            .replace(/%%BASE_DIR%%/g, baseDir)
         markdownLinkCheck(
-            fs
-                .readFileSync(path.join(__dirname, 'file.md'))
-                .toString()
-                .replace(/%%BASE_URL%%/g, 'file://' + __dirname),
-            { baseUrl },
+            input,
+            { baseUrl: `file://${baseDir}` },
             (err, results) => {
                 expect(err).to.be(null)
                 expect(results).to.be.an('array')
@@ -217,11 +219,13 @@ describe('markdown-link-check', function () {
         })
     })
 
-    it('should handle multiple inputs', (done) => {
+    it('should handle multiple inputs and resolve relative path to FILE', (done) => {
+        const baseDir = path.join(__dirname, 'file/multiple')
+
         const inputsArgs: InputsArgs = {
             inputs: [
-                { filenameOrUrl: path.join(__dirname, 'file1.md') },
-                { filenameOrUrl: path.join(__dirname, 'file2.md') },
+                { filenameOrUrl: path.join(baseDir, 'file1.md') },
+                { filenameOrUrl: path.join(baseDir, 'file2.md') },
             ],
         }
         const options: Options = {}
@@ -259,7 +263,7 @@ describe('markdown-link-check', function () {
                 expect(file1Results[i]!.statusCode).to.be(file1Expected[i].statusCode)
                 expect(file1Results[i]!.status).to.be(file1Expected[i].status)
             }
-            // file1.md
+            // file2.md
             expect(results![1]!.results).to.not.be(null)
             const file2Results = results![1]!.results!
             expect(file2Results).to.be.an('array')
