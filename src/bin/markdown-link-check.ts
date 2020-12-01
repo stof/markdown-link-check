@@ -32,7 +32,7 @@ function run(filenameOrUrl: string, cmdObj: CmdOptions): void {
             return { filenameOrUrl: input }
         }),
     }
-    processInputs(inputsArgs, options, (err: any, results?: (ProcessInputResults | undefined)[]) => {
+    processInputs(inputsArgs, options, (err: any, results?: (ProcessInputResults | undefined)[]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
         printInputsResult(cmdObj, err, results)
     })
 }
@@ -75,7 +75,7 @@ function overrideOptionswithCmdObj(options: Options, cmdObj: CmdOptions) {
         options.fileEncoding = cmdObj.fileEncoding
     }
 }
-function printInputsResult(cmdObj: CmdOptions, err: any, results?: (ProcessInputResults | undefined)[]): void {
+function printInputsResult(cmdObj: CmdOptions, err: any, results?: (ProcessInputResults | undefined)[]): void { // eslint-disable-line @typescript-eslint/no-explicit-any
     if (err) {
         console.error(chalk.red('ERROR: something went wrong!'))
         console.error(err)
@@ -135,7 +135,7 @@ function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): Inpu
     }
 
     let notAliveLinksCount = 0
-    for (const linkResult of linkResults!) {
+    for (const linkResult of linkResults) {
         if (!linkResult) {
             if (!cmdObj.quiet) {
                 console.log(chalk.yellow('Warning: no link detail! (should not happen)'))

@@ -15,3 +15,15 @@ Contributing
 npx ts-node src/bin/markdown-link-check.ts test/file1.md
 npx ts-node src/bin/markdown-link-check.ts --inputs test/file1.md test/file2.md
 ```
+
+
+# Release
+
+
+Tag a new version with:
+
+```bash
+npm version major|minor|patch
+```
+
+Then github action will publish the tag and create a new release

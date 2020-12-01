@@ -1,5 +1,15 @@
 # Changes
 
+## [Unreleased][]
+
+### Added
+
+- Release on new tag with github action
+
+## [3.8.3][] - 2020-12-01
+
+- Migration to typescript
+
 ## Version 3.8.3
 
 * update dependencies (Fixes #86)
@@ -83,3 +93,7 @@
 ## Version 3.3.1
 
 * update dependencies to avoid CVE-2018-3728
+
+
+[Unreleased]: https://github.com/boillodmanuel/markdown-link-check/compare/v3.8.3...HEAD
+[3.8.3]: https://github.com/boillodmanuel/markdown-link-check/tree/v3.8.3

@@ -6,6 +6,8 @@ import expect from 'expect.js'
 
 import { markdownLinkCheck, processInputs, InputsArgs, Options } from '../src'
 
+/* eslint-disable @typescript-eslint/no-non-null-assertion*/
+
 describe('markdown-link-check', function () {
     const MAX_RETRY_COUNT = 5
     // add a longer timeout on tests so we can really test real cases.
@@ -79,6 +81,7 @@ describe('markdown-link-check', function () {
             const address =
                 typeof server.address() === 'string'
                     ? server.address()
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     : (server.address() as any).address + ':' + (server.address() as any).port
             baseUrl = 'http://' + address
             done()

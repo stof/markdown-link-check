@@ -213,6 +213,13 @@ npm test
 ```
 
 
+## Test command line
+
+```bash
+npx markdown-link-check test/file1.md
+npx markdown-link-check --inputs test/file1.md test/file2.md
+```
+
 ## License
 
 See [LICENSE.md](https://github.com/tcort/markdown-link-check/blob/master/LICENSE.md)

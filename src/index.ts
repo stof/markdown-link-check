@@ -4,9 +4,9 @@ import * as url from 'url'
 import * as async from 'async'
 import * as request from 'request'
 import * as _ from 'lodash'
-import { linkCheck, LinkCheckResult, Options as LinkCheckOptions } from 'link-check'
-import ProgressBar = require('progress')
+import ProgressBar from 'progress'
 import markdownLinkExtractor = require('markdown-link-extractor')
+import { linkCheck, LinkCheckResult, Options as LinkCheckOptions } from '@boillodmanuel/link-check'
 import { Options, Status, Callback } from './types'
 
 export * from './types'
@@ -35,7 +35,7 @@ export interface InputArgs {
 export function processInputs(
     inputsArgs: InputsArgs,
     options: Options,
-    callback: (err: any, results?: (ProcessInputResults | undefined)[]) => void,
+    callback: Callback<(ProcessInputResults | undefined)[]>, // eslint-disable-line @typescript-eslint/no-explicit-any
 ): void {
     const globalFileEncoding = options.fileEncoding
 
@@ -65,22 +65,24 @@ interface InputArg {
  *  list of links and their status
  * }
  */
-function processInput(inputArg: InputArg, callback: (err: any, results?: ProcessInputResults) => void) {
-    extractMarkdownFromInput(inputArg, (err1: any, result?: ExtractMarkdownResult) => {
+function processInput(inputArg: InputArg, callback: Callback<ProcessInputResults>) {
+    extractMarkdownFromInput(inputArg, (err1: any, result1?: ExtractMarkdownResult) => { // eslint-disable-line @typescript-eslint/no-explicit-any
         if (err1) {
             callback(err1)
         } else {
+            const r1 = result1! // eslint-disable-line @typescript-eslint/no-non-null-assertion
             procesMarkdown(
-                result!.markdown,
-                result!.options,
-                (err2: any, results?: (LinkCheckResult | undefined)[]) => {
+                r1.markdown,
+                r1.options,
+                (err2: any, result2?: (LinkCheckResult | undefined)[]) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                     if (err2) {
                         callback(err2)
                     } else {
+                        const r2 = result2! // eslint-disable-line @typescript-eslint/no-non-null-assertion
                         callback(null, {
                             filenameOrUrl: inputArg.filenameOrUrl,
-                            options: result!.options,
-                            results,
+                            options: r1.options,
+                            results: r2,
                         })
                     }
                 },
@@ -99,10 +101,10 @@ interface ExtractMarkdownResult {
     options: Options
 }
 
-function extractMarkdownFromInput(inputArg: InputArg, callback: (err: any, result?: ExtractMarkdownResult) => void) {
+function extractMarkdownFromInput(inputArg: InputArg, callback: Callback<ExtractMarkdownResult>) {
     const filenameOrUrl = inputArg.filenameOrUrl
     if (/https?:/.test(filenameOrUrl)) {
-        request.get(filenameOrUrl, (error: any, response: request.Response, body: any): void => {
+        request.get(filenameOrUrl, (error: any, response: request.Response, body: any): void => { // eslint-disable-line @typescript-eslint/no-explicit-any
             if (error) {
                 callback(error)
             } else if (response.statusCode === 404) {
@@ -168,17 +170,19 @@ function extractMarkdownFromInput(inputArg: InputArg, callback: (err: any, resul
  *  list of links and their status
  * }
  */
-export function markdownLinkCheck(markdown: string, optionArg: Options | Callback, callbackArg?: Callback): void {
+export function markdownLinkCheck(markdown: string, optionsArg: Options | Callback<(LinkCheckResult | undefined)[]>, callbackArg?: Callback<(LinkCheckResult | undefined)[]>): void {
     let options: Options
-    let callback: Callback
+    let callback: Callback<(LinkCheckResult | undefined)[]>
 
-    if (arguments.length === 2 && typeof optionArg === 'function') {
+    if (arguments.length === 2 && typeof optionsArg === 'function') {
         // optional 'opts' not supplied.
-        callback = optionArg as Callback
+        callback = optionsArg as Callback<(LinkCheckResult | undefined)[]>
         options = {}
+    } else if (arguments.length === 3 && callbackArg) {
+        callback = callbackArg
+        options = optionsArg as Options
     } else {
-        callback = callbackArg!
-        options = optionArg as Options
+        throw new Error('Unexpected arguments')
     }
 
     procesMarkdown(markdown, options, callback)
@@ -191,7 +195,7 @@ export function markdownLinkCheck(markdown: string, optionArg: Options | Callbac
  *  list of links and their status
  * }
  */
-export function procesMarkdown(markdown: string, options: Options, callback: Callback): void {
+export function procesMarkdown(markdown: string, options: Options, callback: Callback<(LinkCheckResult | undefined)[]>): void {
     // Make sure it is not undefined and that the appropriate headers are always recalculated for a given link.
     options.headers = {}
 
@@ -227,7 +231,7 @@ export function procesMarkdown(markdown: string, options: Options, callback: Cal
 
 /** Return a linkCheckIterator function after capturing options and bar parameters */
 function getLinkCheckIterator(options: Options, bar: ProgressBar | undefined) {
-    return function linkCheckIterator(link: string, callback: async.AsyncResultCallback<LinkCheckResult, any>) {
+    return function linkCheckIterator(link: string, callback: async.AsyncResultCallback<LinkCheckResult, any>) { // eslint-disable-line @typescript-eslint/no-explicit-any
         {
             if (options.ignorePatterns) {
                 const shouldIgnore = options.ignorePatterns.some((ignorePattern) => {

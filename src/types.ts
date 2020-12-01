@@ -1,6 +1,7 @@
-import { Options as LinkCheckOptions, LinkCheckResult } from 'link-check'
+import { Options as LinkCheckOptions } from '@boillodmanuel/link-check'
 
-export type Callback = (err: any, results?: (LinkCheckResult | undefined)[]) => void
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+export type Callback<T> = (err: any, result?: T) => void
 
 export enum Status {
     ALIVE = 'alive',
@@ -27,5 +28,5 @@ export interface ReplacementPattern {
 }
 export interface HttpHeader {
     urls: string[]
-    headers: { [key: string]: any }
+    headers: { [key: string]: any } // eslint-disable-line @typescript-eslint/no-explicit-any
 }
