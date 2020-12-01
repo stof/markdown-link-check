@@ -4,7 +4,7 @@ import * as http from 'http'
 import express from 'express'
 import expect from 'expect.js'
 
-import { markdownLinkCheck, processInputs, InputsArgs, Options } from '../src'
+import { markdownLinkCheck, processInputs, ProcessInputResults, InputsArgs, Options } from '../src'
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion*/
 
@@ -230,57 +230,30 @@ describe('markdown-link-check', function () {
         }
         const options: Options = {}
 
-        const filesExpectations = [
+        const filesExpectations: Expectation[] = [
             {
                 file: path.join(baseDir, 'file1.md'),
                 links: [
-                    { statusCode: 200, status: 'alive', errCode: null },
-                    { statusCode: 200, status: 'alive', errCode: null },
-                    { statusCode: 200, status: 'alive', errCode: null },
-                    { statusCode: 200, status: 'alive', errCode: null },
+                    { statusCode: 200, status: 'alive', link: 'hello-multiple.jpg' },
+                    { statusCode: 200, status: 'alive', link: './hello-multiple.jpg' },
+                    { statusCode: 200, status: 'alive', link: 'file1.md' },
+                    { statusCode: 200, status: 'alive', link: './file1.md' },
                 ]
             },
             {
                 file: path.join(baseDir, 'file2.md'),
                 links: [
-                    { statusCode: 200, status: 'alive', errCode: null },
-                    { statusCode: 200, status: 'alive', errCode: null },
-                    { statusCode: 404, status: 'dead', errCode: 'ENOENT' },
-                    { statusCode: 404, status: 'dead', errCode: 'ENOENT' },
+                    { statusCode: 200, status: 'alive', link: 'file1.md' },
+                    { statusCode: 200, status: 'alive', link: './file1.md' },
+                    { statusCode: 404, status: 'dead', errCode: 'ENOENT', link: 'null.md' },
+                    { statusCode: 404, status: 'dead', errCode: 'ENOENT', link: './null.md' },
                 ]
             }
         ]
 
         processInputs(inputsArgs, options, (err, results) => {
-            expect(err).to.be(null)
-            expect(results).to.be.an('array')
+            expectResultsToBeExpectations(err, results, filesExpectations)
 
-            
-            expect(results).to.have.length(filesExpectations.length)
-
-            for (let i = 0; i < filesExpectations.length; i++) {
-                const fileExpectation = filesExpectations[i]
-                expect(results![i]!.filenameOrUrl).to.be(fileExpectation.file)
-                expect(results![i]!.results).to.not.be(null)
-
-                // compare links
-                const linksExpectations = fileExpectation.links
-                const fileResults = results![i]!.results!
-                expect(fileResults).to.be.an('array')
-                expect(fileResults.length).to.be(linksExpectations.length)
-
-                for (let i = 0; i < fileResults.length; i++) {
-                    if (linksExpectations[i].errCode === null) {
-                        expect(fileResults[i]!.err).to.be(null)
-                    } else {
-                        expect(fileResults[i]!.err).to.not.be(null)
-                        expect(fileResults[i]!.err!.code).to.be(linksExpectations[i].errCode)
-                    }
-                    expect(fileResults[i]!.statusCode).to.be(linksExpectations[i].statusCode)
-                    expect(fileResults[i]!.status).to.be(linksExpectations[i].status)
-                }
-            }
-            
             done()
         })
     })
@@ -289,7 +262,7 @@ describe('markdown-link-check', function () {
         this.timeout(60000)
 
         let md = ''
-        const nlinks = 10000
+        const nlinks = 1000
         for (let i = 0; i < nlinks; i++) {
             md += '[test](' + baseUrl + '/foo/bar?i=' + i + ')\n'
         }
@@ -307,3 +280,51 @@ describe('markdown-link-check', function () {
         })
     })
 })
+
+interface Expectation {
+    file: string
+    links: {
+        link: string
+        statusCode: number
+        status: string
+        errCode?: string
+    }[]
+}
+
+function expectResultsToBeExpectations(
+    err: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    results: (ProcessInputResults | undefined)[] | undefined,
+    expectations: Expectation[]): void {
+
+    expect(err).to.be(null)
+
+    expect(results).to.be.an('array')
+
+    expect(results).to.have.length(expectations.length)
+
+    for (let i = 0; i < expectations.length; i++) {
+        const result = results![i]! as ProcessInputResults
+        const fileExpectation = expectations[i]
+        expect(result.filenameOrUrl).to.be(fileExpectation.file)
+        expect(result.results).to.not.be(null)
+
+        // compare links
+        const linksExpectations = fileExpectation.links
+        const linkResults = result.results!
+        expect(linkResults).to.be.an('array')
+        expect(linkResults.length).to.be(linksExpectations.length)
+
+        for (let i = 0; i < linkResults.length; i++) {
+            expect(linkResults[i]!.link).to.be(linksExpectations[i].link)
+            expect(linkResults[i]!.statusCode).to.be(linksExpectations[i].statusCode)
+            if (linksExpectations[i].errCode) {
+                expect(linkResults[i]!.err).to.not.be(null)
+                expect(linkResults[i]!.err!.code).to.be(linksExpectations[i].errCode)
+            } else {
+                expect(linkResults[i]!.err).to.be(null)
+            }
+            expect(linkResults[i]!.statusCode).to.be(linksExpectations[i].statusCode)
+            expect(linkResults[i]!.status).to.be(linksExpectations[i].status)
+        }
+    }
+}

@@ -10,6 +10,7 @@ import { linkCheck, LinkCheckResult, Options as LinkCheckOptions } from '@boillo
 import { Options, Status, Callback } from './types'
 
 export * from './types'
+export { LinkCheckResult }
 
 export interface ProcessInputResults {
     filenameOrUrl: string
