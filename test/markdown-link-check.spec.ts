@@ -82,7 +82,7 @@ describe('markdown-link-check', function () {
                 typeof server.address() === 'string'
                     ? server.address()
                     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      (server.address() as any).address + ':' + (server.address() as any).port
+                    (server.address() as any).address + ':' + (server.address() as any).port
             baseUrl = 'http://' + address
             done()
         })
@@ -230,54 +230,57 @@ describe('markdown-link-check', function () {
         }
         const options: Options = {}
 
-        const file1Expected = [
-            { statusCode: 200, status: 'alive', errCode: null },
-            { statusCode: 200, status: 'alive', errCode: null },
-            { statusCode: 200, status: 'alive', errCode: null },
-            { statusCode: 200, status: 'alive', errCode: null },
-        ]
-        const file2Expected = [
-            { statusCode: 200, status: 'alive', errCode: null },
-            { statusCode: 200, status: 'alive', errCode: null },
-            { statusCode: 404, status: 'dead', errCode: 'ENOENT' },
-            { statusCode: 404, status: 'dead', errCode: 'ENOENT' },
+        const filesExpectations = [
+            {
+                file: path.join(baseDir, 'file1.md'),
+                links: [
+                    { statusCode: 200, status: 'alive', errCode: null },
+                    { statusCode: 200, status: 'alive', errCode: null },
+                    { statusCode: 200, status: 'alive', errCode: null },
+                    { statusCode: 200, status: 'alive', errCode: null },
+                ]
+            },
+            {
+                file: path.join(baseDir, 'file2.md'),
+                links: [
+                    { statusCode: 200, status: 'alive', errCode: null },
+                    { statusCode: 200, status: 'alive', errCode: null },
+                    { statusCode: 404, status: 'dead', errCode: 'ENOENT' },
+                    { statusCode: 404, status: 'dead', errCode: 'ENOENT' },
+                ]
+            }
         ]
 
         processInputs(inputsArgs, options, (err, results) => {
             expect(err).to.be(null)
             expect(results).to.be.an('array')
-            expect(results).to.have.length(2)
 
-            // file1.md
-            expect(results![0]!.results).to.not.be(null)
-            const file1Results = results![0]!.results!
-            expect(file1Results).to.be.an('array')
-            expect(file1Results.length).to.be(file1Expected.length)
-            for (let i = 0; i < file1Results.length; i++) {
-                if (file1Expected[i].errCode === null) {
-                    expect(file1Results[i]!.err).to.be(null)
-                } else {
-                    expect(file1Results[i]!.err).to.not.be(null)
-                    expect(file1Results[i]!.err!.code).to.be(file1Expected[i].errCode)
+            
+            expect(results).to.have.length(filesExpectations.length)
+
+            for (let i = 0; i < filesExpectations.length; i++) {
+                const fileExpectation = filesExpectations[i]
+                expect(results![i]!.filenameOrUrl).to.be(fileExpectation.file)
+                expect(results![i]!.results).to.not.be(null)
+
+                // compare links
+                const linksExpectations = fileExpectation.links
+                const fileResults = results![i]!.results!
+                expect(fileResults).to.be.an('array')
+                expect(fileResults.length).to.be(linksExpectations.length)
+
+                for (let i = 0; i < fileResults.length; i++) {
+                    if (linksExpectations[i].errCode === null) {
+                        expect(fileResults[i]!.err).to.be(null)
+                    } else {
+                        expect(fileResults[i]!.err).to.not.be(null)
+                        expect(fileResults[i]!.err!.code).to.be(linksExpectations[i].errCode)
+                    }
+                    expect(fileResults[i]!.statusCode).to.be(linksExpectations[i].statusCode)
+                    expect(fileResults[i]!.status).to.be(linksExpectations[i].status)
                 }
-                expect(file1Results[i]!.statusCode).to.be(file1Expected[i].statusCode)
-                expect(file1Results[i]!.status).to.be(file1Expected[i].status)
             }
-            // file2.md
-            expect(results![1]!.results).to.not.be(null)
-            const file2Results = results![1]!.results!
-            expect(file2Results).to.be.an('array')
-            expect(file2Results.length).to.be(file2Expected.length)
-            for (let i = 0; i < file2Results.length; i++) {
-                if (file2Expected[i].errCode === null) {
-                    expect(file2Results[i]!.err).to.be(null)
-                } else {
-                    expect(file2Results[i]!.err).to.not.be(null)
-                    expect(file2Results[i]!.err!.code).to.be(file2Expected[i].errCode)
-                }
-                expect(file2Results[i]!.statusCode).to.be(file2Expected[i].statusCode)
-                expect(file2Results[i]!.status).to.be(file2Expected[i].status)
-            }
+            
             done()
         })
     })
