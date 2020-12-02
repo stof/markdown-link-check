@@ -2,6 +2,8 @@
 
 ## [Unreleased][]
 
+## [4.3.0][] - 2020-12-02
+
 ### Added
 
 - Add link cache
@@ -114,7 +116,8 @@
 * update dependencies to avoid CVE-2018-3728
 
 
-[Unreleased]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.2.0...HEAD
+[Unreleased]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.3.0...HEAD
+[4.3.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.2.0...v4.3.0
 [4.2.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.1.0...v4.2.0
 [4.1.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.3...v4.1.0
 [4.0.3]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.2...v4.0.3
