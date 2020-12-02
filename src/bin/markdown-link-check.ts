@@ -184,9 +184,9 @@ function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): Inpu
             }
             console.log(
                 `[${statusLabel}] ${linkResult.link}` +
-                (!isOk || cmdObj.verbose ? ` → Status: ${linkResult.statusCode}` : "") +
-                (linkResult.err ? chalk.red(` (Error: ${linkResult.err})`) : "") +
-                (linkResult.additionalMessages ? chalk.yellow(` (Warning: ${linkResult.additionalMessages})`) : "")
+                    (!isOk || cmdObj.verbose ? ` → Status: ${linkResult.statusCode}` : '') +
+                    (linkResult.err ? chalk.red(` (Error: ${linkResult.err})`) : '') +
+                    (linkResult.additionalMessages ? chalk.yellow(` (Warning: ${linkResult.additionalMessages})`) : ''),
             )
         }
     }

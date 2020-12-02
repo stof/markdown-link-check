@@ -241,11 +241,11 @@ function procesMarkdown(
     const linksCollection: string[] = _.uniq(markdownLinkExtractor(markdown))
     const bar = options.showProgressBar
         ? new ProgressBar('Checking... [:bar] :perce  nt', {
-            complete: '=',
-            incomplete: ' ',
-            width: 25,
-            total: linksCollection.length,
-        })
+              complete: '=',
+              incomplete: ' ',
+              width: 25,
+              total: linksCollection.length,
+          })
         : undefined
 
     const concurrentCheck = options.concurrentCheck || 2
