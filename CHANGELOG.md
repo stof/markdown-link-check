@@ -2,6 +2,11 @@
 
 ## [Unreleased][]
 
+### Added
+
+- Add link cache
+- Add statistics
+
 ## [4.2.0][] - 2020-12-02
 
 ### Added

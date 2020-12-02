@@ -4,10 +4,9 @@ import * as http from 'http'
 import express from 'express'
 import expect from 'expect.js'
 
-import { markdownLinkCheck, processInputs, ProcessInputResults, InputsArgs, Options } from '../src'
+import { markdownLinkCheck, processInputs, ProcessInputResults, InputsArgs, Options, ProcessInputsResults } from '../src'
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion*/
-
 describe('markdown-link-check', function () {
     const MAX_RETRY_COUNT = 5
     // add a longer timeout on tests so we can really test real cases.
@@ -82,7 +81,7 @@ describe('markdown-link-check', function () {
                 typeof server.address() === 'string'
                     ? server.address()
                     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                      (server.address() as any).address + ':' + (server.address() as any).port
+                    (server.address() as any).address + ':' + (server.address() as any).port
             baseUrl = 'http://' + address
             done()
         })
@@ -230,29 +229,42 @@ describe('markdown-link-check', function () {
         }
         const options: Options = {}
 
-        const filesExpectations: Expectation[] = [
-            {
-                file: path.join(baseDir, 'file1.md'),
-                links: [
-                    { statusCode: 200, status: 'alive', link: 'hello-multiple.jpg' },
-                    { statusCode: 200, status: 'alive', link: './hello-multiple.jpg' },
-                    { statusCode: 200, status: 'alive', link: 'file1.md' },
-                    { statusCode: 200, status: 'alive', link: './file1.md' },
-                ],
+        const expectations: Expectations = {
+            stats: {
+                linksCount: 8,
+                aliveLinksCount: 6,
+                ignoredLinksCount: 0,
+                deadLinksCount: 2,
+                errorLinksCount: 0,
             },
-            {
-                file: path.join(baseDir, 'file2.md'),
-                links: [
-                    { statusCode: 200, status: 'alive', link: 'file1.md' },
-                    { statusCode: 200, status: 'alive', link: './file1.md' },
-                    { statusCode: 404, status: 'dead', errCode: 'ENOENT', link: 'null.md' },
-                    { statusCode: 404, status: 'dead', errCode: 'ENOENT', link: './null.md' },
-                ],
+            cacheStats: {
+                cacheHits: 2,
+                cacheMiss: 6,
             },
-        ]
+            results: [
+                {
+                    file: path.join(baseDir, 'file1.md'),
+                    links: [
+                        { statusCode: 200, status: 'alive', link: 'hello-multiple.jpg' },
+                        { statusCode: 200, status: 'alive', link: './hello-multiple.jpg' },
+                        { statusCode: 200, status: 'alive', link: 'file1.md' },
+                        { statusCode: 200, status: 'alive', link: './file1.md' },
+                    ],
+                },
+                {
+                    file: path.join(baseDir, 'file2.md'),
+                    links: [
+                        { statusCode: 200, status: 'alive', link: 'file1.md' },
+                        { statusCode: 200, status: 'alive', link: './file1.md' },
+                        { statusCode: 404, status: 'dead', errCode: 'ENOENT', link: 'null.md' },
+                        { statusCode: 404, status: 'dead', errCode: 'ENOENT', link: './null.md' },
+                    ],
+                },
+            ]
+        }
 
         processInputs(inputsArgs, options, (err, results) => {
-            expectResultsToBeExpectations(err, results, filesExpectations)
+            expectResultsToBeExpectations(err, results, expectations)
 
             done()
         })
@@ -286,44 +298,57 @@ describe('markdown-link-check', function () {
 
         // IMPORTANT NOTES:
         // links starting with a "/" have the "/" striped because absolute path is resolved with baseUrl
-        const filesExpectations: Expectation[] = [
-            {
-                file: path.join(baseDir, 'file1.md'),
-                links: [
-                    { statusCode: 200, status: 'alive', link: 'file1.md' },
-                    { statusCode: 200, status: 'alive', link: './file1.md' },
-                    { statusCode: 200, status: 'alive', link: 'file1.md' },
-                    { statusCode: 200, status: 'alive', link: 'file1.md' },
-                    { statusCode: 200, status: 'alive', link: 'assets/hello-nested.jpg' },
-                ],
+        const expectations: Expectations = {
+            stats: {
+                linksCount: 14,
+                aliveLinksCount: 14,
+                ignoredLinksCount: 0,
+                deadLinksCount: 0,
+                errorLinksCount: 0,
             },
-            {
-                file: path.join(baseDir, 'file2.md'),
-                links: [
-                    { statusCode: 200, status: 'alive', link: 'subdir/subfile2.md' },
-                    { statusCode: 200, status: 'alive', link: './subdir/subfile2.md' },
-                    { statusCode: 200, status: 'alive', link: 'subdir/subfile2.md' },
-                ],
+            cacheStats: {
+                cacheHits: 6,
+                cacheMiss: 8,
             },
-            {
-                file: path.join(baseDir, 'subdir/subfile1.md'),
-                links: [
-                    { statusCode: 200, status: 'alive', link: 'subfile2.md' },
-                    { statusCode: 200, status: 'alive', link: './subfile2.md' },
-                    { statusCode: 200, status: 'alive', link: 'subdir/subfile2.md' },
-                    { statusCode: 200, status: 'alive', link: '../file1.md' },
-                    { statusCode: 200, status: 'alive', link: 'file1.md' },
-                    { statusCode: 200, status: 'alive', link: 'assets/hello-nested.jpg' },
-                ],
-            },
-            {
-                file: path.join(baseDir, 'subdir/subfile2.md'),
-                links: [],
-            },
-        ]
+            results: [
+                {
+                    file: path.join(baseDir, 'file1.md'),
+                    links: [
+                        { statusCode: 200, status: 'alive', link: 'file1.md' },
+                        { statusCode: 200, status: 'alive', link: './file1.md' },
+                        { statusCode: 200, status: 'alive', link: 'file1.md' },
+                        { statusCode: 200, status: 'alive', link: 'file1.md' },
+                        { statusCode: 200, status: 'alive', link: 'assets/hello-nested.jpg' },
+                    ],
+                },
+                {
+                    file: path.join(baseDir, 'file2.md'),
+                    links: [
+                        { statusCode: 200, status: 'alive', link: 'subdir/subfile2.md' },
+                        { statusCode: 200, status: 'alive', link: './subdir/subfile2.md' },
+                        { statusCode: 200, status: 'alive', link: 'subdir/subfile2.md' },
+                    ],
+                },
+                {
+                    file: path.join(baseDir, 'subdir/subfile1.md'),
+                    links: [
+                        { statusCode: 200, status: 'alive', link: 'subfile2.md' },
+                        { statusCode: 200, status: 'alive', link: './subfile2.md' },
+                        { statusCode: 200, status: 'alive', link: 'subdir/subfile2.md' },
+                        { statusCode: 200, status: 'alive', link: '../file1.md' },
+                        { statusCode: 200, status: 'alive', link: 'file1.md' },
+                        { statusCode: 200, status: 'alive', link: 'assets/hello-nested.jpg' },
+                    ],
+                },
+                {
+                    file: path.join(baseDir, 'subdir/subfile2.md'),
+                    links: [],
+                },
+            ]
+        }
 
         processInputs(inputsArgs, options, (err, results) => {
-            expectResultsToBeExpectations(err, results, filesExpectations)
+            expectResultsToBeExpectations(err, results, expectations)
 
             done()
         })
@@ -350,8 +375,23 @@ describe('markdown-link-check', function () {
             done()
         })
     })
+
 })
 
+interface Expectations {
+    results: Expectation[]
+    stats: {
+        linksCount: number
+        aliveLinksCount: number
+        ignoredLinksCount: number
+        deadLinksCount: number
+        errorLinksCount: number
+    },
+    cacheStats: {
+        cacheHits: number,
+        cacheMiss: number,
+    }
+}
 interface Expectation {
     file: string
     links: {
@@ -364,19 +404,31 @@ interface Expectation {
 
 function expectResultsToBeExpectations(
     err: any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    results: (ProcessInputResults | undefined)[] | undefined,
-    expectations: Expectation[],
+    processInputsResults: ProcessInputsResults | undefined,
+    expectations: Expectations,
 ): void {
     expect(err).to.be(null)
 
+    // Stats
+    expect(processInputsResults!.stats.aliveLinksCount).to.be(expectations.stats.aliveLinksCount)
+    expect(processInputsResults!.stats.ignoredLinksCount).to.be(expectations.stats.ignoredLinksCount)
+    expect(processInputsResults!.stats.deadLinksCount).to.be(expectations.stats.deadLinksCount)
+    expect(processInputsResults!.stats.errorLinksCount).to.be(expectations.stats.errorLinksCount)
+
+    // Cache
+    expect(processInputsResults!.cacheStats.cacheHits).to.be(expectations.cacheStats.cacheHits)
+    expect(processInputsResults!.cacheStats.cacheMiss).to.be(expectations.cacheStats.cacheMiss)
+
+    // Results
+    const results = processInputsResults!.results!
     expect(results).to.be.an('array')
 
-    expect(results).to.have.length(expectations.length)
+    expect(results).to.have.length(expectations.results.length)
 
-    for (let i = 0; i < expectations.length; i++) {
+    for (let i = 0; i < expectations.results.length; i++) {
         // console.log(`expectations[${i}]`)
         const result = results![i]! as ProcessInputResults
-        const fileExpectation = expectations[i]
+        const fileExpectation = expectations.results[i]
         expect(result.filenameOrUrl).to.be(fileExpectation.file)
         expect(result.results).to.not.be(null)
 

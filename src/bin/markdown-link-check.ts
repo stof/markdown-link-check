@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import fs from 'fs'
 import program from 'commander'
-import { Options, processInputs, ProcessInputResults, InputsArgs, Status } from '../'
+import { Options, processInputs, ProcessInputsResults, ProcessInputResults, InputsArgs, Status } from '../'
 
 const statusLabels: { [status: string]: string } = {
     alive: chalk.green('✓'),
@@ -15,6 +15,7 @@ export interface CmdOptions {
     quiet?: boolean
     verbose?: boolean
     debug?: boolean
+    stats?: boolean
     retryOnError?: boolean
     retryOn429?: boolean
     timeout?: string
@@ -33,8 +34,8 @@ function run(filenameOrUrl: string, cmdObj: CmdOptions): void {
         }),
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    processInputs(inputsArgs, options, (err: any, results?: (ProcessInputResults | undefined)[]) => {
-        printInputsResult(cmdObj, err, results)
+    processInputs(inputsArgs, options, (err: any, processInputsResults?: ProcessInputsResults) => {
+        printInputsResult(cmdObj, err, processInputsResults)
     })
 }
 
@@ -77,24 +78,24 @@ function overrideOptionswithCmdObj(options: Options, cmdObj: CmdOptions) {
     }
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function printInputsResult(cmdObj: CmdOptions, err: any, results?: (ProcessInputResults | undefined)[]): void {
+function printInputsResult(cmdObj: CmdOptions, err: any, processInputsResults?: ProcessInputsResults): void {
     if (err) {
         console.error(chalk.red('ERROR: something went wrong!'))
         console.error(err)
         process.exit(1)
     }
 
+    if (!processInputsResults) {
+        console.error(chalk.red('ERROR: No processInputsResults! (should not happen)'))
+        process.exit(1)
+    }
+    const results = processInputsResults.results
     if (!results || results.length === 0) {
         console.error(chalk.red('ERROR: No input processed! (should not happen)'))
         process.exit(1)
     }
 
     const inputCount = results.length
-    let linksCount = 0
-    let aliveLinksCount = 0
-    let ignoredLinksCount = 0
-    let deadLinksCount = 0
-    let errorLinksCount = 0
 
     for (const result of results) {
         if (!result) {
@@ -102,44 +103,34 @@ function printInputsResult(cmdObj: CmdOptions, err: any, results?: (ProcessInput
                 console.log(chalk.yellow('Warning: no detail! (should not happen)'))
             }
         } else {
-            const stats = printInputResult(cmdObj, result)
-            linksCount += stats.linksCount
-            aliveLinksCount += stats.aliveLinksCount
-            ignoredLinksCount += stats.ignoredLinksCount
-            deadLinksCount += stats.deadLinksCount
-            errorLinksCount += stats.errorLinksCount
+            printInputResult(cmdObj, result)
         }
     }
 
     // print summary
-    console.log()
-    console.log('SUMMARY:')
-    console.log('--------')
-    console.log('Total inputs:', inputCount)
-    console.log('Total links:', linksCount)
-    console.log('- alive   :', aliveLinksCount)
-    console.log('- ignored :', ignoredLinksCount)
-    console.log('- error   :', errorLinksCount)
-    console.log('- dead    :', deadLinksCount)
-
-    process.exit(errorLinksCount + deadLinksCount === 0 ? 0 : 1)
+    if (cmdObj.stats) {
+        console.log()
+        console.log('SUMMARY:')
+        console.log('--------')
+        console.log('Total inputs:', inputCount)
+        console.log('Total links:', processInputsResults.stats.linksCount)
+        console.log('- alive   :', processInputsResults.stats.aliveLinksCount)
+        console.log('- ignored :', processInputsResults.stats.ignoredLinksCount)
+        console.log('- error   :', processInputsResults.stats.errorLinksCount)
+        console.log('- dead    :', processInputsResults.stats.deadLinksCount)
+        console.log('Cache:', processInputsResults.stats.linksCount)
+        console.log('- hits   :', processInputsResults.cacheStats.cacheHits)
+        console.log('- miss :', processInputsResults.cacheStats.cacheMiss)
+    }
+    const isFailed = processInputsResults.stats.errorLinksCount + processInputsResults.stats.deadLinksCount === 0
+    process.exit(isFailed ? 0 : 1)
 }
 
-interface InputStats {
-    linksCount: number
-    aliveLinksCount: number
-    deadLinksCount: number
-    ignoredLinksCount: number
-    errorLinksCount: number
-}
-
-function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): InputStats {
+function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): void {
     console.log()
     console.log(chalk.cyan('Input: ' + result.filenameOrUrl))
 
     const linkResults = result.results
-    let aliveLinksCount = 0
-    let ignoredLinksCount = 0
     let deadLinksCount = 0
     let errorLinksCount = 0
 
@@ -147,13 +138,7 @@ function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): Inpu
         if (!cmdObj.verbose) {
             console.log(chalk.yellow('Debug: No hyperlinks found!'))
         }
-        return {
-            linksCount: 0,
-            aliveLinksCount,
-            deadLinksCount,
-            ignoredLinksCount,
-            errorLinksCount,
-        }
+        return
     }
 
     for (const linkResult of linkResults) {
@@ -163,9 +148,9 @@ function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): Inpu
             }
         } else {
             if (linkResult.status === Status.ALIVE) {
-                aliveLinksCount++
+                // ignore
             } else if (linkResult.status === Status.IGNORED) {
-                ignoredLinksCount++
+                // ignore
             } else if (linkResult.status === Status.ERROR) {
                 errorLinksCount++
             } else if (linkResult.status === Status.DEAD) {
@@ -199,14 +184,6 @@ function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): Inpu
     if (errorLinksCount) {
         console.log(chalk.red('ERROR: %s error links found!'), errorLinksCount)
     }
-
-    return {
-        linksCount,
-        aliveLinksCount,
-        deadLinksCount,
-        errorLinksCount,
-        ignoredLinksCount,
-    }
 }
 // tslint:enable:no-console
 
@@ -221,6 +198,7 @@ program
     .option('--retryOnError', 'retry after an error')
     .option('--retryOn429', "retry after the duration indicated in 'retry-after' header when HTTP code is 429")
     .option('-e, --fileEncoding <string>', '')
+    .option('-s, --stats', '')
     .option('--timeout <string>', '')
     .arguments('[filenameOrUrl]')
     .action(run)
