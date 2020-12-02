@@ -2,6 +2,8 @@
 
 ## [Unreleased][]
 
+## [4.2.0][] - 2020-12-02
+
 ### Added
 
 - Improve statistics reported by the binary
@@ -107,7 +109,8 @@
 * update dependencies to avoid CVE-2018-3728
 
 
-[Unreleased]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.1.0...HEAD
+[Unreleased]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.2.0...HEAD
+[4.2.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.1.0...v4.2.0
 [4.1.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.3...v4.1.0
 [4.0.3]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.2...v4.0.3
 [4.0.2]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.1...v4.0.2
