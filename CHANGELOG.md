@@ -2,6 +2,10 @@
 
 ## [Unreleased][]
 
+### Added
+
+- Add stats `retryCount` in long checks report and in verbose mode
+
 ## [4.4.0][] - 2020-12-02
 
 ### Added

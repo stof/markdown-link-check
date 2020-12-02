@@ -212,6 +212,7 @@ function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): void
             `[${statusLabel}] ${linkResult.link}` +
                 (!isOk || cmdObj.verbose ? ` → Status: ${linkResult.statusCode}` : '') +
                 (cmdObj.verbose ? ` in ${linkResult.stats.durationInMs} ms` : '') +
+                (cmdObj.verbose && linkResult.stats.retryCount ? ` after ${linkResult.stats.retryCount} retry)` : '') +
                 (linkResult.err ? chalk.red(` (Error: ${linkResult.err})`) : '') +
                 (linkResult.additionalMessages ? chalk.yellow(` (Warning: ${linkResult.additionalMessages})`) : ''),
         )
@@ -263,9 +264,14 @@ function printLongChecksInput(cmdObj: CmdOptions, result: ProcessInputResults): 
         if (linkResult.stats.durationInMs && linkResult.stats.durationInMs > cmdObj.longChecksMaxDuration) {
             console.log(
                 `- ${linkResult.link}: ` +
+                    // duration
                     (linkResult.stats.durationInMs > cmdObj.longChecksMaxDuration * 10
                         ? chalk.red(`${linkResult.stats.durationInMs} ms (> 10x)`)
-                        : chalk.yellow(`${linkResult.stats.durationInMs} ms`)),
+                        : chalk.yellow(`${linkResult.stats.durationInMs} ms`)) +
+                    // retry count if any
+                    (linkResult.stats.retryCount && linkResult.stats.retryCount > 0
+                        ? ` (retry: ${linkResult.stats.retryCount}`
+                        : ''),
             )
         }
     }
