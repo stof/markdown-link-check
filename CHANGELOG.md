@@ -2,6 +2,10 @@
 
 ## [Unreleased][]
 
+### Added
+
+- Improve statistics reported by the binary
+
 ## [4.1.0][] - 2020-12-02
 
 ### Added
