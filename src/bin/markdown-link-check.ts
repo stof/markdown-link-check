@@ -12,15 +12,19 @@ const statusLabels: { [status: string]: string } = {
 
 export interface CmdOptions {
     config?: string
-    quiet?: boolean
-    verbose?: boolean
-    debug?: boolean
-    stats?: boolean
-    retryOnError?: boolean
-    retryOn429?: boolean
     timeout?: string
     fileEncoding?: string
     inputs?: string[]
+
+    quiet: boolean
+    verbose: boolean
+    debug: boolean
+    printSummary: boolean
+    printCacheStats: boolean
+    printLongChecks: boolean
+    longChecksMaxDuration: number
+    retryOnError: boolean
+    retryOn429: boolean
 }
 
 // tslint:disable:no-console
@@ -56,6 +60,34 @@ function getOptions(cmdObj: CmdOptions): Options {
         }
     } else {
         options = {}
+    }
+    // set default
+    if (cmdObj.quiet === undefined) {
+        cmdObj.quiet = false
+    }
+    if (cmdObj.verbose === undefined) {
+        cmdObj.verbose = false
+    }
+    if (cmdObj.debug === undefined) {
+        cmdObj.debug = false
+    }
+    if (cmdObj.printSummary === undefined) {
+        cmdObj.printSummary = false
+    }
+    if (cmdObj.printCacheStats === undefined) {
+        cmdObj.printCacheStats = false
+    }
+    if (cmdObj.printLongChecks === undefined) {
+        cmdObj.printLongChecks = false
+    }
+    if (cmdObj.longChecksMaxDuration === undefined) {
+        cmdObj.longChecksMaxDuration = 5000 // 5s
+    }
+    if (cmdObj.retryOnError === undefined) {
+        cmdObj.retryOnError = false
+    }
+    if (cmdObj.retryOn429 === undefined) {
+        cmdObj.retryOn429 = false
     }
     return options
 }
@@ -108,19 +140,27 @@ function printInputsResult(cmdObj: CmdOptions, err: any, processInputsResults?: 
     }
 
     // print summary
-    if (cmdObj.stats) {
+    if (cmdObj.printSummary) {
         console.log()
-        console.log('SUMMARY:')
-        console.log('--------')
+        console.log(chalk.cyan('SUMMARY:'))
+        console.log(chalk.cyan('--------'))
         console.log('Total inputs:', inputCount)
         console.log('Total links:', processInputsResults.stats.linksCount)
         console.log('- alive   :', processInputsResults.stats.aliveLinksCount)
         console.log('- ignored :', processInputsResults.stats.ignoredLinksCount)
         console.log('- error   :', processInputsResults.stats.errorLinksCount)
         console.log('- dead    :', processInputsResults.stats.deadLinksCount)
+    }
+    if (cmdObj.printCacheStats) {
+        console.log()
+        console.log(chalk.cyan('CACHE STATISTICS:'))
+        console.log(chalk.cyan('--------'))
         console.log('Cache:', processInputsResults.stats.linksCount)
         console.log('- hits   :', processInputsResults.cacheStats.cacheHits)
         console.log('- miss :', processInputsResults.cacheStats.cacheMiss)
+    }
+    if (cmdObj.printLongChecks) {
+        printLongChecks(cmdObj, results)
     }
     const isFailed = processInputsResults.stats.errorLinksCount + processInputsResults.stats.deadLinksCount === 0
     process.exit(isFailed ? 0 : 1)
@@ -136,7 +176,7 @@ function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): void
 
     if (!linkResults) {
         if (!cmdObj.verbose) {
-            console.log(chalk.yellow('Debug: No hyperlinks found!'))
+            console.log(chalk.yellow('Warning: No hyperlinks found!'))
         }
         return
     }
@@ -146,34 +186,35 @@ function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): void
             if (!cmdObj.quiet) {
                 console.log(chalk.yellow('Warning: no link detail! (should not happen)'))
             }
-        } else {
-            if (linkResult.status === Status.ALIVE) {
-                // ignore
-            } else if (linkResult.status === Status.IGNORED) {
-                // ignore
-            } else if (linkResult.status === Status.ERROR) {
-                errorLinksCount++
-            } else if (linkResult.status === Status.DEAD) {
-                deadLinksCount++
-            } else {
-                console.log(chalk.yellow(`Warning: unknowns link status "${linkResult.status}"`))
-            }
-
-            const statusLabel = statusLabels[linkResult.status] || '?'
-            // prettier-ignore
-
-            const isOk = (linkResult.status === Status.ALIVE || linkResult.status === Status.IGNORED)
-            if (cmdObj.quiet && isOk) {
-                // Skip alive messages in quiet mode.
-                break
-            }
-            console.log(
-                `[${statusLabel}] ${linkResult.link}` +
-                    (!isOk || cmdObj.verbose ? ` → Status: ${linkResult.statusCode}` : '') +
-                    (linkResult.err ? chalk.red(` (Error: ${linkResult.err})`) : '') +
-                    (linkResult.additionalMessages ? chalk.yellow(` (Warning: ${linkResult.additionalMessages})`) : ''),
-            )
+            break
         }
+        if (linkResult.status === Status.ALIVE) {
+            // ignore
+        } else if (linkResult.status === Status.IGNORED) {
+            // ignore
+        } else if (linkResult.status === Status.ERROR) {
+            errorLinksCount++
+        } else if (linkResult.status === Status.DEAD) {
+            deadLinksCount++
+        } else {
+            console.log(chalk.yellow(`Warning: unknowns link status "${linkResult.status}"`))
+        }
+
+        const statusLabel = statusLabels[linkResult.status] || '?'
+        // prettier-ignore
+
+        const isOk = (linkResult.status === Status.ALIVE || linkResult.status === Status.IGNORED)
+        if (cmdObj.quiet && isOk) {
+            // Skip alive messages in quiet mode.
+            break
+        }
+        console.log(
+            `[${statusLabel}] ${linkResult.link}` +
+            (!isOk || cmdObj.verbose ? ` → Status: ${linkResult.statusCode}` : '') +
+            (cmdObj.verbose ? ` in ${linkResult.stats.durationInMs} ms` : '') +
+            (linkResult.err ? chalk.red(` (Error: ${linkResult.err})`) : '') +
+            (linkResult.additionalMessages ? chalk.yellow(` (Warning: ${linkResult.additionalMessages})`) : ''),
+        )
     }
 
     const linksCount = linkResults.length
@@ -187,6 +228,49 @@ function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): void
 }
 // tslint:enable:no-console
 
+function printLongChecks(cmdObj: CmdOptions, results: (ProcessInputResults | undefined)[]): void {
+    console.log()
+    console.log(chalk.cyan('LONG CHECK:'))
+    console.log(chalk.cyan('--------'))
+
+    for (const result of results) {
+        if (!result) {
+            if (!cmdObj.quiet) {
+                console.log(chalk.yellow('Warning: no detail! (should not happen)'))
+            }
+        } else {
+            printLongChecksInput(cmdObj, result)
+        }
+    }
+}
+
+function printLongChecksInput(cmdObj: CmdOptions, result: ProcessInputResults): void {
+    const linkResults = result.results
+    if (!linkResults) {
+        if (!cmdObj.verbose) {
+            console.log(chalk.yellow('Warning: No hyperlinks found!'))
+        }
+        return
+    }
+
+    for (const linkResult of linkResults) {
+        if (!linkResult) {
+            if (!cmdObj.quiet) {
+                console.log(chalk.yellow('Warning: no link detail! (should not happen)'))
+            }
+            break
+        }
+        if (linkResult.stats.durationInMs && linkResult.stats.durationInMs > cmdObj.longChecksMaxDuration) {
+            console.log(`- ${linkResult.link}: ` +
+                ((linkResult.stats.durationInMs > cmdObj.longChecksMaxDuration * 10) ?
+                    chalk.red(`${linkResult.stats.durationInMs} ms (> 10x)`) :
+                    chalk.yellow(`${linkResult.stats.durationInMs} ms`))
+            )
+        }
+    }
+}
+// tslint:enable:no-console
+
 program
     // .option('-p, --progress', 'show progress bar')
     .option('-c, --config [config]', 'apply a config file (JSON), holding e.g. url specific header configuration')
@@ -195,10 +279,13 @@ program
     .option('-d, --debug', 'displays debug information')
     .option('-i, --inputs <inputs...>', 'list of inputs')
     // .option('-a, --alive <code>', 'comma separated list of HTTP codes to be considered as alive', commaSeparatedCodesList)
-    .option('--retryOnError', 'retry after an error')
-    .option('--retryOn429', "retry after the duration indicated in 'retry-after' header when HTTP code is 429")
+    .option('--retry-on-error', 'retry after an error')
+    .option('--retry-on-429', "retry after the duration indicated in 'retry-after' header when HTTP code is 429")
     .option('-e, --fileEncoding <string>', '')
-    .option('-s, --stats', '')
+    .option('--print-summary', '')
+    .option('--print-cache-stats', '')
+    .option('--print-long-checks', '')
+    .option('--long-checks-max-duration <number>', '')
     .option('--timeout <string>', '')
     .arguments('[filenameOrUrl]')
     .action(run)
