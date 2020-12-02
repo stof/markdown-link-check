@@ -4,7 +4,14 @@ import * as http from 'http'
 import express from 'express'
 import expect from 'expect.js'
 
-import { markdownLinkCheck, processInputs, ProcessInputResults, InputsArgs, Options, ProcessInputsResults } from '../src'
+import {
+    markdownLinkCheck,
+    processInputs,
+    ProcessInputResults,
+    InputsArgs,
+    Options,
+    ProcessInputsResults,
+} from '../src'
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion*/
 describe('markdown-link-check', function () {
@@ -81,7 +88,7 @@ describe('markdown-link-check', function () {
                 typeof server.address() === 'string'
                     ? server.address()
                     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (server.address() as any).address + ':' + (server.address() as any).port
+                      (server.address() as any).address + ':' + (server.address() as any).port
             baseUrl = 'http://' + address
             done()
         })
@@ -260,7 +267,7 @@ describe('markdown-link-check', function () {
                         { statusCode: 404, status: 'dead', errCode: 'ENOENT', link: './null.md' },
                     ],
                 },
-            ]
+            ],
         }
 
         processInputs(inputsArgs, options, (err, results) => {
@@ -344,7 +351,7 @@ describe('markdown-link-check', function () {
                     file: path.join(baseDir, 'subdir/subfile2.md'),
                     links: [],
                 },
-            ]
+            ],
         }
 
         processInputs(inputsArgs, options, (err, results) => {
@@ -375,7 +382,6 @@ describe('markdown-link-check', function () {
             done()
         })
     })
-
 })
 
 interface Expectations {
@@ -386,10 +392,10 @@ interface Expectations {
         ignoredLinksCount: number
         deadLinksCount: number
         errorLinksCount: number
-    },
+    }
     cacheStats: {
-        cacheHits: number,
-        cacheMiss: number,
+        cacheHits: number
+        cacheMiss: number
     }
 }
 interface Expectation {

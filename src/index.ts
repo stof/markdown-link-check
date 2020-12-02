@@ -21,10 +21,10 @@ export interface ProcessInputsResults {
         ignoredLinksCount: number
         deadLinksCount: number
         errorLinksCount: number
-    },
+    }
     cacheStats: {
-        cacheHits: number,
-        cacheMiss: number,
+        cacheHits: number
+        cacheMiss: number
     }
 }
 
@@ -69,13 +69,8 @@ export function processInputs(
     options: Options,
     callback: Callback<ProcessInputsResults>, // eslint-disable-line @typescript-eslint/no-explicit-any
 ): void {
-    return new MarkdownLinkCheck().processInputs(
-        inputsArgs,
-        options,
-        callback
-    )
+    return new MarkdownLinkCheck().processInputs(inputsArgs, options, callback)
 }
-
 
 /**
  *
@@ -112,9 +107,7 @@ export function markdownLinkCheck(
     return new MarkdownLinkCheck().procesMarkdown(extractMarkdownResult, callback)
 }
 
-
 class MarkdownLinkCheck {
-
     // CACHE
     private readonly LINK_CHECK_CACHE: { [key: string]: (callbackArg: Callback<LinkCheckResult>) => void } = {}
     private cacheHits = 0
@@ -162,7 +155,7 @@ class MarkdownLinkCheck {
                 return
             } else {
                 if (!results) {
-                    callback(new Error("Unexpected undefined processInputs results"))
+                    callback(new Error('Unexpected undefined processInputs results'))
                     return
                 } else {
                     const processInputsResults: ProcessInputsResults = {
@@ -177,7 +170,7 @@ class MarkdownLinkCheck {
                         cacheStats: {
                             cacheHits: self.cacheHits,
                             cacheMiss: self.cacheMiss,
-                        }
+                        },
                     }
                     callback(null, processInputsResults)
                 }
@@ -322,11 +315,11 @@ class MarkdownLinkCheck {
         const linksCollection: string[] = _.uniq(markdownLinkExtractor(markdown))
         const bar = options.showProgressBar
             ? new ProgressBar('Checking... [:bar] :perce  nt', {
-                complete: '=',
-                incomplete: ' ',
-                width: 25,
-                total: linksCollection.length,
-            })
+                  complete: '=',
+                  incomplete: ' ',
+                  width: 25,
+                  total: linksCollection.length,
+              })
             : undefined
 
         const concurrentCheck = options.concurrentCheck || 2
@@ -403,7 +396,9 @@ class MarkdownLinkCheck {
                 // absolute path refer to baseUrl (if any)
                 if (options.resolveAbsolutePathWithBaseUrl) {
                     if (!options.baseUrl) {
-                        const err = new Error(`Error: "resolveAbsolutePathWithBaseUrl" could not be true when "baseUrl" is empty`)
+                        const err = new Error(
+                            `Error: "resolveAbsolutePathWithBaseUrl" could not be true when "baseUrl" is empty`,
+                        )
                         const linkResult = new LinkCheckResult(link, 0, Status.ERROR, err)
                         self.updateStats(linkResult)
                         callback(null, linkResult)
@@ -465,7 +460,7 @@ class MarkdownLinkCheck {
                         linkResult = new LinkCheckResult(link, 0, Status.ERROR, err) // custom status for errored links)
                     } else {
                         if (!result) {
-                            throw new Error("ERROR: Unexpected undefined result")
+                            throw new Error('ERROR: Unexpected undefined result')
                         }
                         linkResult = result
                     }
@@ -475,7 +470,6 @@ class MarkdownLinkCheck {
             }
         }
     }
-
 
     updateStats(linkResult: LinkCheckResult) {
         if (linkResult.status === Status.ALIVE) {
@@ -489,9 +483,7 @@ class MarkdownLinkCheck {
         } else {
             throw new Error(`Unexpected status ${linkResult.status}`)
         }
-
     }
-
 
     getDeferLinkCheckFunction(link: string, optionsArg: Options): (callbackArg: Callback<LinkCheckResult>) => void {
         let resolved = false
