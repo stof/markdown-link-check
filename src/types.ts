@@ -13,9 +13,11 @@ export enum Status {
 export interface Options extends LinkCheckOptions {
     ignoreDisable?: boolean
     showProgressBar?: boolean
+    resolveAbsolutePathWithBaseUrl?: boolean
     ignorePatterns?: IgnorePattern[]
     replacementPatterns?: ReplacementPattern[]
     httpHeaders?: HttpHeader[]
+    concurrentFileCheck?: number
     concurrentCheck?: number
     fileEncoding?: string
 }

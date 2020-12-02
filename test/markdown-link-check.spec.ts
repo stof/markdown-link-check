@@ -89,11 +89,13 @@ describe('markdown-link-check', function () {
     })
 
     it('should check the links in sample.md and resolve relative path to HTTP', (done) => {
+        const input = fs
+            .readFileSync(path.join(__dirname, 'http/sample.md'))
+            .toString()
+            .replace(/%%BASE_URL%%/g, baseUrl)
+
         markdownLinkCheck(
-            fs
-                .readFileSync(path.join(__dirname, 'http/sample.md'))
-                .toString()
-                .replace(/%%BASE_URL%%/g, baseUrl),
+            input,
             {
                 baseUrl,
                 ignorePatterns: [{ pattern: /not-working-and-ignored/ }],
@@ -178,14 +180,15 @@ describe('markdown-link-check', function () {
     })
 
     it('should check the links in file.md and resolve relative path to FILE', (done) => {
-        const baseDir = path.join(__dirname, 'file/single/')
+        const baseDir = path.join(__dirname, 'file/single')
         const input = fs
             .readFileSync(path.join(baseDir, 'file.md'))
             .toString()
             .replace(/%%BASE_DIR%%/g, baseDir)
+
         markdownLinkCheck(
             input,
-            { baseUrl: `file://${baseDir}` },
+            { baseUrl: `file://${baseDir}`},
             (err, results) => {
                 expect(err).to.be(null)
                 expect(results).to.be.an('array')
@@ -199,6 +202,7 @@ describe('markdown-link-check', function () {
                 expect(results!.length).to.be(expected.length)
 
                 for (let i = 0; i < results!.length; i++) {
+                    // console.log(`results[${i}]`)
                     expect(results![i]!.statusCode).to.be(expected[i].statusCode)
                     expect(results![i]!.status).to.be(expected[i].status)
                 }
@@ -258,6 +262,79 @@ describe('markdown-link-check', function () {
         })
     })
 
+
+    it('should handle multiple inputs with nested folder and resolve relative path to FILE', (done) => {
+        const baseDir = path.join(__dirname, 'file/nested')
+
+        const inputsArgs: InputsArgs = {
+            inputs: [
+                { filenameOrUrl: path.join(baseDir, 'file1.md') },
+                { filenameOrUrl: path.join(baseDir, 'file2.md') },
+                { filenameOrUrl: path.join(baseDir, 'subdir/subfile1.md') },
+                { filenameOrUrl: path.join(baseDir, 'subdir/subfile2.md') },
+            ],
+        }
+        const options: Options = {
+            baseUrl: `file://${baseDir}`,
+            resolveAbsolutePathWithBaseUrl: true,
+            replacementPatterns: [
+                {
+                    // link to markdown file doesn't ends with .md (don't process assets folder)
+                    // - file => - /file.md
+                    // - /assets/file => - assets/file
+                    "pattern": "^(?!/assets)(.*?)(#.*)?$",
+                    "replacement": "$1.md"
+                },
+            ],
+            // debug: true, concurrentCheck: 1, concurrentFileCheck: 1
+        }
+
+        // IMPORTANT NOTES:
+        // links starting with a "/" have the "/" striped because absolute path is resolved with baseUrl
+        const filesExpectations: Expectation[] = [
+            {
+                file: path.join(baseDir, 'file1.md'),
+                links: [
+                    { statusCode: 200, status: 'alive', link: 'file1.md' },
+                    { statusCode: 200, status: 'alive', link: './file1.md' },
+                    { statusCode: 200, status: 'alive', link: 'file1.md' },
+                    { statusCode: 200, status: 'alive', link: 'file1.md' },
+                    { statusCode: 200, status: 'alive', link: 'assets/hello-nested.jpg' },
+                ]
+            },
+            {
+                file: path.join(baseDir, 'file2.md'),
+                links: [
+                    { statusCode: 200, status: 'alive', link: 'subdir/subfile2.md' },
+                    { statusCode: 200, status: 'alive', link: './subdir/subfile2.md' },
+                    { statusCode: 200, status: 'alive', link: 'subdir/subfile2.md' },
+                ]
+            },
+            {
+                file: path.join(baseDir, 'subdir/subfile1.md'),
+                links: [
+                    { statusCode: 200, status: 'alive', link: 'subfile2.md' },
+                    { statusCode: 200, status: 'alive', link: './subfile2.md' },
+                    { statusCode: 200, status: 'alive', link: 'subdir/subfile2.md' },
+                    { statusCode: 200, status: 'alive', link: '../file1.md' },
+                    { statusCode: 200, status: 'alive', link: 'file1.md' },
+                    { statusCode: 200, status: 'alive', link: 'assets/hello-nested.jpg' },
+                ]
+            },
+            {
+                file: path.join(baseDir, 'subdir/subfile2.md'),
+                links: [
+                ]
+            },
+        ]
+
+        processInputs(inputsArgs, options, (err, results) => {
+            expectResultsToBeExpectations(err, results, filesExpectations)
+
+            done()
+        })
+    })
+
     it('should handle thousands of links (this test takes up to a minute)', function (done) {
         this.timeout(60000)
 
@@ -279,6 +356,7 @@ describe('markdown-link-check', function () {
             done()
         })
     })
+
 })
 
 interface Expectation {
@@ -303,6 +381,7 @@ function expectResultsToBeExpectations(
     expect(results).to.have.length(expectations.length)
 
     for (let i = 0; i < expectations.length; i++) {
+        // console.log(`expectations[${i}]`)
         const result = results![i]! as ProcessInputResults
         const fileExpectation = expectations[i]
         expect(result.filenameOrUrl).to.be(fileExpectation.file)
@@ -314,17 +393,18 @@ function expectResultsToBeExpectations(
         expect(linkResults).to.be.an('array')
         expect(linkResults.length).to.be(linksExpectations.length)
 
-        for (let i = 0; i < linkResults.length; i++) {
-            expect(linkResults[i]!.link).to.be(linksExpectations[i].link)
-            expect(linkResults[i]!.statusCode).to.be(linksExpectations[i].statusCode)
-            if (linksExpectations[i].errCode) {
-                expect(linkResults[i]!.err).to.not.be(null)
-                expect(linkResults[i]!.err!.code).to.be(linksExpectations[i].errCode)
+        for (let j = 0; j < linkResults.length; j++) {
+            // console.log(`linkResults[${j}]`, JSON.stringify(linkResults[j]))
+            expect(linkResults[j]!.link).to.be(linksExpectations[j].link)
+            expect(linkResults[j]!.statusCode).to.be(linksExpectations[j].statusCode)
+            if (linksExpectations[j].errCode) {
+                expect(linkResults[j]!.err).to.not.be(null)
+                expect(linkResults[j]!.err!.code).to.be(linksExpectations[j].errCode)
             } else {
-                expect(linkResults[i]!.err).to.be(null)
+                expect(linkResults[j]!.err).to.be(null)
             }
-            expect(linkResults[i]!.statusCode).to.be(linksExpectations[i].statusCode)
-            expect(linkResults[i]!.status).to.be(linksExpectations[i].status)
+            expect(linkResults[j]!.statusCode).to.be(linksExpectations[j].statusCode)
+            expect(linkResults[j]!.status).to.be(linksExpectations[j].status)
         }
     }
 }

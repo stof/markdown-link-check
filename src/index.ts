@@ -8,6 +8,9 @@ import ProgressBar from 'progress'
 import markdownLinkExtractor = require('markdown-link-extractor')
 import { linkCheck, LinkCheckResult, Options as LinkCheckOptions } from '@boillodmanuel/link-check'
 import { Options, Status, Callback } from './types'
+import { debug } from './debug'
+import { formatWithOptions } from 'util'
+import { option } from 'commander'
 
 export * from './types'
 export { LinkCheckResult }
@@ -50,7 +53,11 @@ export function processInputs(
         }
     })
 
-    async.mapLimit(inputArgs /*arr*/, 2 /* limit */, processInput /*iterator*/, callback /*callback*/)
+    async.mapLimit(
+        inputArgs /*arr*/,
+        options.concurrentFileCheck || 2 /* limit */,
+        processInput /*iterator*/,
+        callback /*callback*/)
 }
 
 interface InputArg {
@@ -67,6 +74,9 @@ interface InputArg {
  * }
  */
 function processInput(inputArg: InputArg, callback: Callback<ProcessInputResults>) {
+    if (inputArg.options.debug) {
+        debug(inputArg.options.debugToStdErr, 0, "[INPUT] Process : '" + inputArg.filenameOrUrl + "'")
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     extractMarkdownFromInput(inputArg, (err1: any, result1?: ExtractMarkdownResult) => {
         if (err1) {
@@ -74,7 +84,7 @@ function processInput(inputArg: InputArg, callback: Callback<ProcessInputResults
         } else {
             const r1 = result1! // eslint-disable-line @typescript-eslint/no-non-null-assertion
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            procesMarkdown(r1.markdown, r1.options, (err2: any, result2?: (LinkCheckResult | undefined)[]) => {
+            procesMarkdown(r1, (err2: any, result2?: (LinkCheckResult | undefined)[]) => {
                 if (err2) {
                     callback(err2)
                 } else {
@@ -96,6 +106,7 @@ interface InputArg {
 }
 interface ExtractMarkdownResult {
     filenameOrUrl: string
+    inputBaseUrl: string | undefined
     markdown: string
     options: Options
 }
@@ -115,7 +126,7 @@ function extractMarkdownFromInput(inputArg: InputArg, callback: Callback<Extract
                 )
             }
 
-            let baseUrl
+            let inputBaseUrl
             try {
                 // extract baseUrl from supplied URL
                 const parsed = url.parse(filenameOrUrl)
@@ -124,16 +135,16 @@ function extractMarkdownFromInput(inputArg: InputArg, callback: Callback<Extract
                 if (parsed.pathname && parsed.pathname.lastIndexOf('/') !== -1) {
                     parsed.pathname = parsed.pathname.substr(0, parsed.pathname.lastIndexOf('/') + 1)
                 }
-                baseUrl = url.format(parsed)
+                inputBaseUrl = url.format(parsed)
             } catch (err) {
-                /* ignore error */
-                baseUrl = undefined
+                callback(new Error(`Error: cannot get base url of url "${filenameOrUrl}".`))
+                return
             }
 
-            inputArg.options.baseUrl = baseUrl
             callback(null, {
                 ...inputArg,
                 markdown: body,
+                inputBaseUrl,
             })
         })
     } else {
@@ -148,7 +159,8 @@ function extractMarkdownFromInput(inputArg: InputArg, callback: Callback<Extract
                     ),
                 )
             }
-            inputArg.options.baseUrl = 'file://' + path.dirname(path.resolve(filenameOrUrl))
+
+            const inputBaseUrl = 'file://' + path.dirname(path.resolve(filenameOrUrl))
             fs.readFile(filenameOrUrl, inputArg.options.fileEncoding, (err2, data) => {
                 if (err2) {
                     callback(err2)
@@ -156,6 +168,7 @@ function extractMarkdownFromInput(inputArg: InputArg, callback: Callback<Extract
                     callback(null, {
                         ...inputArg,
                         markdown: typeof data === 'string' ? data : data.toString(),
+                        inputBaseUrl,
                     })
                 }
             })
@@ -189,7 +202,13 @@ export function markdownLinkCheck(
         throw new Error('Unexpected arguments')
     }
 
-    procesMarkdown(markdown, options, callback)
+    const extractMarkdownResult: ExtractMarkdownResult = {
+        filenameOrUrl: "?",
+        inputBaseUrl: undefined,
+        markdown,
+        options,        
+    }
+    procesMarkdown(extractMarkdownResult, callback)
 }
 
 /**
@@ -199,12 +218,14 @@ export function markdownLinkCheck(
  *  list of links and their status
  * }
  */
-export function procesMarkdown(
-    markdown: string,
-    options: Options,
+function procesMarkdown(
+    extractMarkdownResult: ExtractMarkdownResult,
     callback: Callback<(LinkCheckResult | undefined)[]>,
 ): void {
     // Make sure it is not undefined and that the appropriate headers are always recalculated for a given link.
+    const options = extractMarkdownResult.options
+    let markdown = extractMarkdownResult.markdown
+
     options.headers = {}
 
     if (!options.ignoreDisable) {
@@ -221,34 +242,36 @@ export function procesMarkdown(
     const linksCollection: string[] = _.uniq(markdownLinkExtractor(markdown))
     const bar = options.showProgressBar
         ? new ProgressBar('Checking... [:bar] :perce  nt', {
-              complete: '=',
-              incomplete: ' ',
-              width: 25,
-              total: linksCollection.length,
-          })
+            complete: '=',
+            incomplete: ' ',
+            width: 25,
+            total: linksCollection.length,
+        })
         : undefined
 
     const concurrentCheck = options.concurrentCheck || 2
     async.mapLimit(
         linksCollection /*arr*/,
         concurrentCheck /* limit */,
-        getLinkCheckIterator(options, bar) /*iterator*/,
+        getLinkCheckIterator(extractMarkdownResult, bar) /*iterator*/,
         callback /*callback*/,
     )
 }
 
-/** Return a linkCheckIterator function after capturing options and bar parameters */
-function getLinkCheckIterator(options: Options, bar: ProgressBar | undefined) {
+/** Return a linkCheckIterator function after capturing extractMarkdownResult and bar parameters */
+function getLinkCheckIterator(extractMarkdownResult: ExtractMarkdownResult, bar: ProgressBar | undefined) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return function linkCheckIterator(link: string, callback: async.AsyncResultCallback<LinkCheckResult, any>) {
         {
+            const options = extractMarkdownResult.options
+
             if (options.ignorePatterns) {
                 const shouldIgnore = options.ignorePatterns.some((ignorePattern) => {
                     return ignorePattern.pattern instanceof RegExp
                         ? ignorePattern.pattern.test(link)
                         : new RegExp(ignorePattern.pattern).test(link)
-                        ? true
-                        : false
+                            ? true
+                            : false
                 })
 
                 if (shouldIgnore) {
@@ -258,7 +281,11 @@ function getLinkCheckIterator(options: Options, bar: ProgressBar | undefined) {
                 }
             }
 
+            if (options.debug) {
+                debug(options.debugToStdErr, 0, "[LINK] Link: '" + link + "'")
+            }
             if (options.replacementPatterns) {
+                const initialLink = link
                 for (const replacementPattern of options.replacementPatterns) {
                     const pattern =
                         replacementPattern.pattern instanceof RegExp
@@ -266,8 +293,11 @@ function getLinkCheckIterator(options: Options, bar: ProgressBar | undefined) {
                             : new RegExp(replacementPattern.pattern)
                     link = link.replace(pattern, replacementPattern.replacement)
                 }
+                if (options.debug && link !== initialLink) {
+                    debug(options.debugToStdErr, 0, "[LINK] Replacement(s) made: '" + link + "'")
+                }
             }
-
+            
             const linkCheckOptions: LinkCheckOptions = {}
             Object.assign(linkCheckOptions, options)
 
@@ -282,6 +312,33 @@ function getLinkCheckIterator(options: Options, bar: ProgressBar | undefined) {
                     }
                 }
             }
+
+            // absolute path refer to baseUrl (if any)
+            if (options.resolveAbsolutePathWithBaseUrl) {
+                if (!options.baseUrl) {
+                    callback(new Error(`Error: "resolveAbsolutePathWithBaseUrl" could not be true when "baseUrl" is empty`))
+                    return
+                } else if (options.baseUrl.endsWith("/")) {
+                    callback(new Error(`Error: "baseUrl" could not end with "/" when "resolveAbsolutePathWithBaseUrl" is true`))
+                    return
+                }
+                // Strip "file://" if any
+                const filePath = url.parse(options.baseUrl, false, true).path
+                if (!filePath) {
+                    callback(new Error(`Error: baseUrl "${options.baseUrl}" could not parsed`))
+                    return
+                }
+                if (path.isAbsolute(link)) {
+                    link = link.replace(/^\//, '')
+                } else {
+                    linkCheckOptions.baseUrl = extractMarkdownResult.inputBaseUrl
+                }
+            } else {
+                if (extractMarkdownResult.inputBaseUrl) {
+                    linkCheckOptions.baseUrl = extractMarkdownResult.inputBaseUrl
+                }
+            }
+
             linkCheck(link, linkCheckOptions, (err, result) => {
                 if (bar) {
                     bar.tick()
