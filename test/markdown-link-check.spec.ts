@@ -67,7 +67,7 @@ describe('markdown-link-check', function () {
 
         app.get('/hello.jpg', (req, res) => {
             res.sendFile('hello.jpg', {
-                root: path.join(__dirname, "http/www"),
+                root: path.join(__dirname, 'http/www'),
                 dotfiles: 'deny',
             })
         })
@@ -82,7 +82,7 @@ describe('markdown-link-check', function () {
                 typeof server.address() === 'string'
                     ? server.address()
                     : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    (server.address() as any).address + ':' + (server.address() as any).port
+                      (server.address() as any).address + ':' + (server.address() as any).port
             baseUrl = 'http://' + address
             done()
         })
@@ -186,30 +186,26 @@ describe('markdown-link-check', function () {
             .toString()
             .replace(/%%BASE_DIR%%/g, baseDir)
 
-        markdownLinkCheck(
-            input,
-            { baseUrl: `file://${baseDir}`},
-            (err, results) => {
-                expect(err).to.be(null)
-                expect(results).to.be.an('array')
+        markdownLinkCheck(input, { baseUrl: `file://${baseDir}` }, (err, results) => {
+            expect(err).to.be(null)
+            expect(results).to.be.an('array')
 
-                const expected = [
-                    { statusCode: 200, status: 'alive' },
-                    { statusCode: 200, status: 'alive' },
-                    { statusCode: 404, status: 'dead' },
-                ]
+            const expected = [
+                { statusCode: 200, status: 'alive' },
+                { statusCode: 200, status: 'alive' },
+                { statusCode: 404, status: 'dead' },
+            ]
 
-                expect(results!.length).to.be(expected.length)
+            expect(results!.length).to.be(expected.length)
 
-                for (let i = 0; i < results!.length; i++) {
-                    // console.log(`results[${i}]`)
-                    expect(results![i]!.statusCode).to.be(expected[i].statusCode)
-                    expect(results![i]!.status).to.be(expected[i].status)
-                }
+            for (let i = 0; i < results!.length; i++) {
+                // console.log(`results[${i}]`)
+                expect(results![i]!.statusCode).to.be(expected[i].statusCode)
+                expect(results![i]!.status).to.be(expected[i].status)
+            }
 
-                done()
-            },
-        )
+            done()
+        })
     })
 
     it('should handle links with parens', (done) => {
@@ -242,7 +238,7 @@ describe('markdown-link-check', function () {
                     { statusCode: 200, status: 'alive', link: './hello-multiple.jpg' },
                     { statusCode: 200, status: 'alive', link: 'file1.md' },
                     { statusCode: 200, status: 'alive', link: './file1.md' },
-                ]
+                ],
             },
             {
                 file: path.join(baseDir, 'file2.md'),
@@ -251,8 +247,8 @@ describe('markdown-link-check', function () {
                     { statusCode: 200, status: 'alive', link: './file1.md' },
                     { statusCode: 404, status: 'dead', errCode: 'ENOENT', link: 'null.md' },
                     { statusCode: 404, status: 'dead', errCode: 'ENOENT', link: './null.md' },
-                ]
-            }
+                ],
+            },
         ]
 
         processInputs(inputsArgs, options, (err, results) => {
@@ -261,7 +257,6 @@ describe('markdown-link-check', function () {
             done()
         })
     })
-
 
     it('should handle multiple inputs with nested folder and resolve relative path to FILE', (done) => {
         const baseDir = path.join(__dirname, 'file/nested')
@@ -282,8 +277,8 @@ describe('markdown-link-check', function () {
                     // link to markdown file doesn't ends with .md (don't process assets folder)
                     // - file => - /file.md
                     // - /assets/file => - assets/file
-                    "pattern": "^(?!/assets)(.*?)(#.*)?$",
-                    "replacement": "$1.md"
+                    pattern: '^(?!/assets)(.*?)(#.*)?$',
+                    replacement: '$1.md',
                 },
             ],
             // debug: true, concurrentCheck: 1, concurrentFileCheck: 1
@@ -300,7 +295,7 @@ describe('markdown-link-check', function () {
                     { statusCode: 200, status: 'alive', link: 'file1.md' },
                     { statusCode: 200, status: 'alive', link: 'file1.md' },
                     { statusCode: 200, status: 'alive', link: 'assets/hello-nested.jpg' },
-                ]
+                ],
             },
             {
                 file: path.join(baseDir, 'file2.md'),
@@ -308,7 +303,7 @@ describe('markdown-link-check', function () {
                     { statusCode: 200, status: 'alive', link: 'subdir/subfile2.md' },
                     { statusCode: 200, status: 'alive', link: './subdir/subfile2.md' },
                     { statusCode: 200, status: 'alive', link: 'subdir/subfile2.md' },
-                ]
+                ],
             },
             {
                 file: path.join(baseDir, 'subdir/subfile1.md'),
@@ -319,12 +314,11 @@ describe('markdown-link-check', function () {
                     { statusCode: 200, status: 'alive', link: '../file1.md' },
                     { statusCode: 200, status: 'alive', link: 'file1.md' },
                     { statusCode: 200, status: 'alive', link: 'assets/hello-nested.jpg' },
-                ]
+                ],
             },
             {
                 file: path.join(baseDir, 'subdir/subfile2.md'),
-                links: [
-                ]
+                links: [],
             },
         ]
 
@@ -356,7 +350,6 @@ describe('markdown-link-check', function () {
             done()
         })
     })
-
 })
 
 interface Expectation {
@@ -372,8 +365,8 @@ interface Expectation {
 function expectResultsToBeExpectations(
     err: any, // eslint-disable-line @typescript-eslint/no-explicit-any
     results: (ProcessInputResults | undefined)[] | undefined,
-    expectations: Expectation[]): void {
-
+    expectations: Expectation[],
+): void {
     expect(err).to.be(null)
 
     expect(results).to.be.an('array')

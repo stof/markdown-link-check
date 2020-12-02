@@ -55,7 +55,8 @@ export function processInputs(
         inputArgs /*arr*/,
         options.concurrentFileCheck || 2 /* limit */,
         processInput /*iterator*/,
-        callback /*callback*/)
+        callback /*callback*/,
+    )
 }
 
 interface InputArg {
@@ -201,10 +202,10 @@ export function markdownLinkCheck(
     }
 
     const extractMarkdownResult: ExtractMarkdownResult = {
-        filenameOrUrl: "?",
+        filenameOrUrl: '?',
         inputBaseUrl: undefined,
         markdown,
-        options,        
+        options,
     }
     procesMarkdown(extractMarkdownResult, callback)
 }
@@ -268,11 +269,12 @@ function getLinkCheckIterator(extractMarkdownResult: ExtractMarkdownResult, bar:
                     return ignorePattern.pattern instanceof RegExp
                         ? ignorePattern.pattern.test(link)
                         : new RegExp(ignorePattern.pattern).test(link)
-                            ? true
-                            : false
                 })
 
                 if (shouldIgnore) {
+                    if (options.debug) {
+                        debug(options.debugToStdErr, 0, "[LINK] Ignore link: '" + link + "'")
+                    }
                     const result = new LinkCheckResult(link, 0, Status.IGNORED)
                     callback(null, result)
                     return
@@ -295,7 +297,7 @@ function getLinkCheckIterator(extractMarkdownResult: ExtractMarkdownResult, bar:
                     debug(options.debugToStdErr, 0, "[LINK] Replacement(s) made: '" + link + "'")
                 }
             }
-            
+
             const linkCheckOptions: LinkCheckOptions = {}
             Object.assign(linkCheckOptions, options)
 
@@ -314,10 +316,16 @@ function getLinkCheckIterator(extractMarkdownResult: ExtractMarkdownResult, bar:
             // absolute path refer to baseUrl (if any)
             if (options.resolveAbsolutePathWithBaseUrl) {
                 if (!options.baseUrl) {
-                    callback(new Error(`Error: "resolveAbsolutePathWithBaseUrl" could not be true when "baseUrl" is empty`))
+                    callback(
+                        new Error(`Error: "resolveAbsolutePathWithBaseUrl" could not be true when "baseUrl" is empty`),
+                    )
                     return
-                } else if (options.baseUrl.endsWith("/")) {
-                    callback(new Error(`Error: "baseUrl" could not end with "/" when "resolveAbsolutePathWithBaseUrl" is true`))
+                } else if (options.baseUrl.endsWith('/')) {
+                    callback(
+                        new Error(
+                            `Error: "baseUrl" could not end with "/" when "resolveAbsolutePathWithBaseUrl" is true`,
+                        ),
+                    )
                     return
                 }
                 // Strip "file://" if any

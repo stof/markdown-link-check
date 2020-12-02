@@ -91,7 +91,10 @@ function printInputsResult(cmdObj: CmdOptions, err: any, results?: (ProcessInput
 
     const inputCount = results.length
     let linksCount = 0
-    let notAliveLinksCount = 0
+    let aliveLinksCount = 0
+    let ignoredLinksCount = 0
+    let deadLinksCount = 0
+    let errorLinksCount = 0
 
     for (const result of results) {
         if (!result) {
@@ -101,7 +104,10 @@ function printInputsResult(cmdObj: CmdOptions, err: any, results?: (ProcessInput
         } else {
             const stats = printInputResult(cmdObj, result)
             linksCount += stats.linksCount
-            notAliveLinksCount += stats.notAliveLinksCount
+            aliveLinksCount += stats.aliveLinksCount
+            ignoredLinksCount += stats.ignoredLinksCount
+            deadLinksCount += stats.deadLinksCount
+            errorLinksCount += stats.errorLinksCount
         }
     }
 
@@ -111,14 +117,20 @@ function printInputsResult(cmdObj: CmdOptions, err: any, results?: (ProcessInput
     console.log('--------')
     console.log('Total inputs:', inputCount)
     console.log('Total links:', linksCount)
-    console.log('Total not alive:', notAliveLinksCount)
+    console.log('- alive   :', aliveLinksCount)
+    console.log('- ignored :', ignoredLinksCount)
+    console.log('- error   :', errorLinksCount)
+    console.log('- dead    :', deadLinksCount)
 
-    process.exit(notAliveLinksCount === 0 ? 0 : 1)
+    process.exit(errorLinksCount + deadLinksCount === 0 ? 0 : 1)
 }
 
 interface InputStats {
     linksCount: number
-    notAliveLinksCount: number
+    aliveLinksCount: number
+    deadLinksCount: number
+    ignoredLinksCount: number
+    errorLinksCount: number
 }
 
 function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): InputStats {
@@ -126,38 +138,53 @@ function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): Inpu
     console.log(chalk.cyan('Input: ' + result.filenameOrUrl))
 
     const linkResults = result.results
+    let aliveLinksCount = 0
+    let ignoredLinksCount = 0
+    let deadLinksCount = 0
+    let errorLinksCount = 0
+
     if (!linkResults) {
         if (!cmdObj.verbose) {
             console.log(chalk.yellow('Debug: No hyperlinks found!'))
         }
         return {
             linksCount: 0,
-            notAliveLinksCount: 0,
+            aliveLinksCount,
+            deadLinksCount,
+            ignoredLinksCount,
+            errorLinksCount,
         }
     }
 
-    let notAliveLinksCount = 0
     for (const linkResult of linkResults) {
         if (!linkResult) {
             if (!cmdObj.quiet) {
                 console.log(chalk.yellow('Warning: no link detail! (should not happen)'))
             }
         } else {
-            const isAlive = linkResult.status === Status.ALIVE
-            // Skip alive messages in quiet mode.
-            if (isAlive) {
-                if (cmdObj.quiet) {
-                    break
-                }
+            if (linkResult.status === Status.ALIVE) {
+                aliveLinksCount++
+            } else if (linkResult.status === Status.IGNORED) {
+                ignoredLinksCount++
+            } else if (linkResult.status === Status.ERROR) {
+                errorLinksCount++
+            } else if (linkResult.status === Status.DEAD) {
+                deadLinksCount++
             } else {
-                notAliveLinksCount++
+                console.log(chalk.yellow(`Warning: unknowns link status "${linkResult.status}"`))
             }
 
             const statusLabel = statusLabels[linkResult.status] || '?'
             // prettier-ignore
+
+            const isOk = (linkResult.status === Status.ALIVE || linkResult.status === Status.IGNORED)
+            if (cmdObj.quiet && isOk) {
+                // Skip alive messages in quiet mode.
+                break
+            }
             console.log(
                 `[${statusLabel}] ${linkResult.link}` +
-                (!isAlive || cmdObj.verbose ? ` → Status: ${linkResult.statusCode}` : "") +
+                (!isOk || cmdObj.verbose ? ` → Status: ${linkResult.statusCode}` : "") +
                 (linkResult.err ? chalk.red(` (Error: ${linkResult.err})`) : "") +
                 (linkResult.additionalMessages ? chalk.yellow(` (Warning: ${linkResult.additionalMessages})`) : "")
             )
@@ -166,13 +193,19 @@ function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): Inpu
 
     const linksCount = linkResults.length
     console.log('%s links checked.', linksCount)
-    if (notAliveLinksCount) {
-        console.log(chalk.red('ERROR: %s not alive links found!'), notAliveLinksCount)
+    if (deadLinksCount) {
+        console.log(chalk.red('ERROR: %s dead links found!'), deadLinksCount)
+    }
+    if (errorLinksCount) {
+        console.log(chalk.red('ERROR: %s error links found!'), errorLinksCount)
     }
 
     return {
         linksCount,
-        notAliveLinksCount,
+        aliveLinksCount,
+        deadLinksCount,
+        errorLinksCount,
+        ignoredLinksCount,
     }
 }
 // tslint:enable:no-console
