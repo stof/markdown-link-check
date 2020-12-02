@@ -9,8 +9,6 @@ import markdownLinkExtractor = require('markdown-link-extractor')
 import { linkCheck, LinkCheckResult, Options as LinkCheckOptions } from '@boillodmanuel/link-check'
 import { Options, Status, Callback } from './types'
 import { debug } from './debug'
-import { formatWithOptions } from 'util'
-import { option } from 'commander'
 
 export * from './types'
 export { LinkCheckResult }

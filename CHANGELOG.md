@@ -2,6 +2,10 @@
 
 ## [Unreleased][]
 
+### Added
+
+- Add `resolveAbsolutePathWithBaseUrl` that resolves absolute path links (like `/page1.md`) related to the `baseUrl` (like `file:///my/wiki`). This is especially usefull when we process several files (in a wiki use case for example).
+
 ## [4.0.3][] - 2020-12-01
 
 ### Added
