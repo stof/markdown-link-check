@@ -2,6 +2,8 @@
 
 ## [Unreleased][]
 
+## [4.1.0][] - 2020-12-02
+
 ### Added
 
 - Add `resolveAbsolutePathWithBaseUrl` that resolves absolute path links (like `/page1.md`) related to the `baseUrl` (like `file:///my/wiki`). This is especially usefull when we process several files (in a wiki use case for example).
@@ -101,7 +103,8 @@
 * update dependencies to avoid CVE-2018-3728
 
 
-[Unreleased]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.3...HEAD
+[Unreleased]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.3...v4.1.0
 [4.0.3]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.2...v4.0.3
 [4.0.2]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.1...v4.0.2
 [4.0.1]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.0...v4.0.1
