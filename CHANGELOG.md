@@ -2,6 +2,10 @@
 
 ## [Unreleased][]
 
+### Added
+
+- Add binary options `--print-summary`, `--print-cache-stats` and `--print-long-checks`
+
 ## [4.3.0][] - 2020-12-02
 
 ### Added
