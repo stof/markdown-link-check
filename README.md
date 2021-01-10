@@ -1,5 +1,10 @@
 ![Test library workflow status](https://github.com/tcort/markdown-link-check/workflows/Test%20library/badge.svg)
 
+
+ℹ️ Fork of [tcort](https://github.com/tcort/markdown-link-check) repository (version 3.8.3), with several improvements:
+- completely rewritten in typescript
+- see [CHANGELOG.md](./CHANGELOG.md) since v3.8.3 to get full list of improvements
+
 # markdown-link-check
 
 Extracts links from markdown texts and checks whether each link is
