@@ -2,6 +2,8 @@
 
 ## [Unreleased][]
 
+## [4.7.0][] - 2021-01-11
+
 ### Added
 
 - Restore support of processing stdin
@@ -150,7 +152,8 @@
 * update dependencies to avoid CVE-2018-3728
 
 
-[Unreleased]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.6.0...HEAD
+[Unreleased]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.7.0...HEAD
+[4.7.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.6.0...v4.7.0
 [4.6.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.5.0...v4.6.0
 [4.5.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.4.0...v4.5.0
 [4.4.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.3.0...v4.4.0
