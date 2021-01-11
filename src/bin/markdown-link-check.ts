@@ -14,8 +14,6 @@ export interface CmdOptions {
     config?: string
     timeout?: string
     fileEncoding?: string
-    inputs?: string[]
-
     quiet: boolean
     verbose: boolean
     alive: (number | RegExp)[]
@@ -29,19 +27,57 @@ export interface CmdOptions {
 }
 
 // tslint:disable:no-console
-function run(filenameOrUrl: string, cmdObj: CmdOptions): void {
-    const inputs = cmdObj.inputs || [filenameOrUrl]
+function run(filenameOrUrls: string[], cmdObj: CmdOptions): void {
     const options = getOptions(cmdObj)
     overrideOptionswithCmdObj(options, cmdObj)
-    const inputsArgs: InputsArgs = {
-        inputs: inputs.map((input) => {
-            return { filenameOrUrl: input }
-        }),
+
+    if (filenameOrUrls) {
+        const inputsArgs: InputsArgs = {
+            inputs: filenameOrUrls.map((input) => {
+                return { filenameOrUrl: input }
+            }),
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        processInputs(inputsArgs, options, (err: any, processInputsResults?: ProcessInputsResults) => {
+            printInputsResult(cmdObj, err, processInputsResults)
+        })
+    } else {
+        readFromStdin((stdin) => {
+            const inputsArgs: InputsArgs = {
+                inputs: [
+                    {
+                        filenameOrUrl: 'stdin',
+                        markdown: stdin,
+                    },
+                ],
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            processInputs(inputsArgs, options, (err: any, processInputsResults?: ProcessInputsResults) => {
+                printInputsResult(cmdObj, err, processInputsResults)
+            })
+        })
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    processInputs(inputsArgs, options, (err: any, processInputsResults?: ProcessInputsResults) => {
-        printInputsResult(cmdObj, err, processInputsResults)
-    })
+}
+
+function readFromStdin(callback: (stdin: string) => void) {
+    const stream = process.stdin
+    let stdin = ''
+    stream
+        .on('data', function (chunk) {
+            stdin += chunk.toString()
+        })
+        .on('error', function (error) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            if ((error as any).code === 'ENOENT') {
+                console.error(chalk.red('\nERROR: File not found! Please provide a valid filename as an argument.'))
+            } else {
+                console.error(chalk.red(error))
+            }
+            return process.exit(1)
+        })
+        .on('end', function () {
+            callback(stdin)
+        })
 }
 
 function getOptions(cmdObj: CmdOptions): Options {
@@ -231,7 +267,6 @@ function printInputResult(cmdObj: CmdOptions, result: ProcessInputResults): void
         console.log(chalk.red('ERROR: %s error links found!'), errorLinksCount)
     }
 }
-// tslint:enable:no-console
 
 function printLongChecks(cmdObj: CmdOptions, results: (ProcessInputResults | undefined)[]): void {
     console.log()
@@ -280,15 +315,30 @@ function printLongChecksInput(cmdObj: CmdOptions, result: ProcessInputResults): 
         }
     }
 }
-// tslint:enable:no-console
+
+function commaSeparatedCodesList(value: string) {
+    return value.split(',').map(function (item) {
+        return parseInt(item, 10)
+    })
+}
 
 program
-    // .option('-p, --progress', 'show progress bar')
+    // Options specific to command line:
     .option('-c, --config [config]', 'apply a config file (JSON), holding e.g. url specific header configuration')
     .option('-q, --quiet', 'displays errors only')
     .option('-v, --verbose', 'displays detailed error information')
     .option('-d, --debug', 'displays debug information')
-    .option('-i, --inputs <inputs...>', 'list of inputs')
+    .option(
+        '--print-summary',
+        'print total number of inputs and links process with details about link status (alive, ignored, dead, error)',
+    )
+    .option('--print-cache-stats', 'print cache usage (hits and misses).')
+    .option(
+        '--print-long-checks',
+        'print links that took more than given delay to verify. Default delay is 5000, configure it with --long-checks-max-duration option',
+    )
+    .option('--long-checks-max-duration <number>', 'configure delay for long check. Default is 5000.')
+    // Options that override config file:
     .option(
         '-a, --alive <code>',
         'comma separated list of HTTP codes to be considered as alive',
@@ -296,12 +346,9 @@ program
     )
     .option('--retry-on-error', 'retry after an error')
     .option('--retry-on-429', "retry after the duration indicated in 'retry-after' header when HTTP code is 429")
+    .option('--timeout <string>', 'timeout in zeit/ms format. (e.g. "2000ms", 20s, 1m). Default is 10s.')
     .option('-e, --fileEncoding <string>', '')
-    .option('--print-summary', '')
-    .option('--print-cache-stats', '')
-    .option('--print-long-checks', '')
-    .option('--long-checks-max-duration <number>', '')
-    .option('--timeout <string>', '')
-    .arguments('[filenameOrUrl]')
+    .arguments('[filenameOrUrls...]')
+    .description('[filenameOrUrls...] One or several markdown files or URLs to check. If absent, check stdin.')
     .action(run)
     .parse(process.argv)

@@ -37,19 +37,17 @@ export interface InputsArgs {
     inputs: InputArgs[]
 }
 export interface InputArgs {
-    filenameOrUrl: string
+    filenameOrUrl: string // in case of stdin, filenameOrUrl is "stdin"
+    markdown?: string // markdown is set when input is read from stdin
     fileEncoding?: string
 }
 
 interface InputArg {
-    filenameOrUrl: string
+    filenameOrUrl: string // in case of stdin, filenameOrUrl is "stdin"
+    markdown?: string // markdown is set when input is read from stdin
     options: Options
 }
 
-interface InputArg {
-    filenameOrUrl: string
-    options: Options
-}
 interface ExtractMarkdownResult {
     filenameOrUrl: string
     inputBaseUrl: string | undefined
@@ -144,6 +142,7 @@ class MarkdownLinkCheck {
             inputOptions.fileEncoding = input.fileEncoding || globalFileEncoding || 'utf-8'
             return {
                 filenameOrUrl: input.filenameOrUrl,
+                markdown: input.markdown,
                 options: inputOptions,
             }
         })
@@ -196,27 +195,52 @@ class MarkdownLinkCheck {
         if (inputArg.options.debug) {
             debug(inputArg.options.debugToStdErr, 0, "[INPUT] Process : '" + inputArg.filenameOrUrl + "'")
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.extractMarkdownFromInput(inputArg, (err1: any, result1?: ExtractMarkdownResult) => {
-            if (err1) {
-                callback(err1)
-            } else {
-                const r1 = result1! // eslint-disable-line @typescript-eslint/no-non-null-assertion
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                this.procesMarkdown(r1, (err2: any, result2?: (LinkCheckResult | undefined)[]) => {
-                    if (err2) {
-                        callback(err2)
-                    } else {
-                        const r2 = result2! // eslint-disable-line @typescript-eslint/no-non-null-assertion
-                        callback(null, {
-                            filenameOrUrl: inputArg.filenameOrUrl,
-                            options: r1.options,
-                            results: r2,
-                        })
-                    }
-                })
+
+        if (inputArg.markdown) {
+            const markdown: ExtractMarkdownResult = {
+                filenameOrUrl: inputArg.filenameOrUrl,
+                markdown: inputArg.markdown,
+                options: inputArg.options,
+                inputBaseUrl: undefined,
             }
-        })
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this.procesMarkdown(markdown, (err2: any, result2?: (LinkCheckResult | undefined)[]) => {
+                if (err2) {
+                    callback(err2)
+                } else {
+                    const r2 = result2! // eslint-disable-line @typescript-eslint/no-non-null-assertion
+                    callback(null, {
+                        filenameOrUrl: inputArg.filenameOrUrl,
+                        options: inputArg.options,
+                        results: r2,
+                    })
+                }
+            })
+        } else if (inputArg.filenameOrUrl) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this.extractMarkdownFromInput(inputArg, (err1: any, result1?: ExtractMarkdownResult) => {
+                if (err1) {
+                    callback(err1)
+                } else {
+                    const r1 = result1! // eslint-disable-line @typescript-eslint/no-non-null-assertion
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    this.procesMarkdown(r1, (err2: any, result2?: (LinkCheckResult | undefined)[]) => {
+                        if (err2) {
+                            callback(err2)
+                        } else {
+                            const r2 = result2! // eslint-disable-line @typescript-eslint/no-non-null-assertion
+                            callback(null, {
+                                filenameOrUrl: inputArg.filenameOrUrl,
+                                options: r1.options,
+                                results: r2,
+                            })
+                        }
+                    })
+                }
+            })
+        } else {
+            callback(new Error('Input must declare either filenameOrUrl or markdown property'))
+        }
     }
 
     extractMarkdownFromInput(inputArg: InputArg, callback: Callback<ExtractMarkdownResult>) {

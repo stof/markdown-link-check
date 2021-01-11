@@ -17,6 +17,13 @@ npx ts-node src/bin/markdown-link-check.ts --inputs test/file1.md test/file2.md
 ```
 
 
+# Testing
+
+```shell
+npm test
+```
+
+
 # Release
 
 

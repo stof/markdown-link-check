@@ -2,6 +2,15 @@
 
 ## [Unreleased][]
 
+### Added
+
+- Restore support of processing stdin
+- Restore support of `-a, --alive` option
+
+### Changes
+
+- Update `README.md` to reflect latest improvements
+
 ## [4.6.0][] - 2021-01-10
 
 ### Changes
@@ -13,12 +22,13 @@
 ### Added
 
 - Add stats `retryCount` in long checks report and in verbose mode
+- Add capability to do concurrency checks with `concurrentFileCheck` and `concurrentCheck` options
 
 ## [4.4.0][] - 2020-12-02
 
 ### Added
 
-- Add binary options `--print-summary`, `--print-cache-stats` and `--print-long-checks`
+- Add command line options `--print-summary`, `--print-cache-stats` and `--print-long-checks` (see [./README.md])
 
 ## [4.3.0][] - 2020-12-02
 
@@ -37,7 +47,12 @@
 
 ### Added
 
-- Add `resolveAbsolutePathWithBaseUrl` that resolves absolute path links (like `/page1.md`) related to the `baseUrl` (like `file:///my/wiki`). This is especially usefull when we process several files (in a wiki use case for example).
+- Add support for multiple files or URLs
+- Rename command line option `--retry` to `--retry-on-429`
+- Add command line option `--retry` to `--retry-on-error`
+- Remove progress bar option
+- Add configuration option `resolveAbsolutePathWithBaseUrl` that allow to resolve absolute path links (like `/page1.md`) related to the `baseUrl` (like `file:///my/wiki`). This is especially usefull when we process several files (in a wiki use case for example).
+- Use @boillodmanuel/link-check fork instead of original version. See its [CHANGELOG.md](https://github.com/boillodmanuel/link-check/blob/master/CHANGELOG.md) to get full list of improvements.
 
 ## [4.0.3][] - 2020-12-01
 
@@ -45,8 +60,9 @@
 
 - Release on new tag with github action
 
-## [3.8.3][] - 2020-12-01
+## [4.0.0][] - 2020-12-01
 
+- Starting point of this fork (`@boillodmanuel`)
 - Migration to typescript
 
 ## Version 3.8.3
@@ -140,9 +156,5 @@
 [4.4.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.3.0...v4.4.0
 [4.3.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.2.0...v4.3.0
 [4.2.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.1.0...v4.2.0
-[4.1.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.3...v4.1.0
-[4.0.3]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.2...v4.0.3
-[4.0.2]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.1...v4.0.2
-[4.0.1]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.0...v4.0.1
+[4.1.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/boillodmanuel/markdown-link-check/compare/v3.8.3...v4.0.0
-[3.8.3]: https://github.com/boillodmanuel/markdown-link-check/tree/v3.8.3

@@ -17,8 +17,11 @@ export interface Options extends LinkCheckOptions {
     ignorePatterns?: IgnorePattern[]
     replacementPatterns?: ReplacementPattern[]
     httpHeaders?: HttpHeader[]
+    /* Number of file or url processed concurrently. Default is 2. */
     concurrentFileCheck?: number
+    /* Number of links processed concurrently for a single file or url. Default is 2. */
     concurrentCheck?: number
+    /* Set file enconding. Default is `utf-8`.*/
     fileEncoding?: string
 }
 export interface IgnorePattern {
