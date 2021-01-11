@@ -18,6 +18,7 @@ export interface CmdOptions {
 
     quiet: boolean
     verbose: boolean
+    alive: (number | RegExp)[]
     debug: boolean
     printSummary: boolean
     printCacheStats: boolean
@@ -95,6 +96,9 @@ function getOptions(cmdObj: CmdOptions): Options {
 function overrideOptionswithCmdObj(options: Options, cmdObj: CmdOptions) {
     if (cmdObj.debug) {
         options.debug = cmdObj.debug
+    }
+    if (cmdObj.retryOn429) {
+        options.aliveStatusCodes = cmdObj.alive
     }
     if (cmdObj.retryOn429) {
         options.retryOn429 = cmdObj.retryOn429
@@ -285,7 +289,11 @@ program
     .option('-v, --verbose', 'displays detailed error information')
     .option('-d, --debug', 'displays debug information')
     .option('-i, --inputs <inputs...>', 'list of inputs')
-    // .option('-a, --alive <code>', 'comma separated list of HTTP codes to be considered as alive', commaSeparatedCodesList)
+    .option(
+        '-a, --alive <code>',
+        'comma separated list of HTTP codes to be considered as alive',
+        commaSeparatedCodesList,
+    )
     .option('--retry-on-error', 'retry after an error')
     .option('--retry-on-429', "retry after the duration indicated in 'retry-after' header when HTTP code is 429")
     .option('-e, --fileEncoding <string>', '')
