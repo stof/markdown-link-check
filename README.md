@@ -201,10 +201,10 @@ Debug:
 
 You can write html comments to disable markdown-link-check for parts of the text.
 
-`<!-- markdown-link-check-disable -->` disables markdown link check.
-`<!-- markdown-link-check-enable -->` reenables markdown link check.
-`<!-- markdown-link-check-disable-next-line -->` disables markdown link check for the next line.
-`<!-- markdown-link-check-disable-line -->` disables markdown link check for this line.
+- `<!-- markdown-link-check-disable -->` disables markdown link check.
+- `<!-- markdown-link-check-enable -->` reenables markdown link check.
+- `<!-- markdown-link-check-disable-next-line -->` disables markdown link check for the next line.
+- `<!-- markdown-link-check-disable-line -->` disables markdown link check for this line.
 
 
 
