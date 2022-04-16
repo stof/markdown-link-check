@@ -23,7 +23,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/tcort/markdown-link-check.git"
+    "url": "git://github.com/boillodmanuel/markdown-link-check.git"
   },
   "keywords": [
     "markdown",
